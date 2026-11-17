@@ -148,7 +148,7 @@ The Docker workflow reads `DOCKER_USERNAME` and `DOCKER_PASSWORD` from GitHub re
 
 The original build-and-test pipeline and its practices are described in [`report/01_CICD.md`](report/01_CICD.md).
 
-Containerization choices, recovery and persistence experiments, DockerHub publishing results, and the self-audit of the Digitronics Docker pipeline are documented in [`report/Docker.md`](report/Docker.md).
+Containerization choices, recovery and persistence experiments, DockerHub publishing results, and the self-audit of the Digitronics Docker pipeline are documented in [`report/02_Docker.md`](report/02_Docker.md).
 
 ---
 
