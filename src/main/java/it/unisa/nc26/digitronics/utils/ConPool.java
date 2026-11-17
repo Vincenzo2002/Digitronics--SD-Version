@@ -63,6 +63,10 @@ public class ConPool {
                 p.setMaxActive(100);
                 p.setInitialSize(10);
                 p.setMinIdle(10);
+                p.setTestOnBorrow(true);
+                p.setValidationQuery("SELECT 1");
+                p.setValidationQueryTimeout(5);
+                p.setValidationInterval(0);
                 p.setRemoveAbandonedTimeout(60);
                 p.setRemoveAbandoned(true);
                 datasource = new DataSource();
