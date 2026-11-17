@@ -71,13 +71,11 @@ jobs:
   publish-docker:
     name: Publish Docker image
     needs: build-and-test
-    # Pubblica da master dopo tutti i controlli.
-    # Eccezione temporanea: il branch del laboratorio serve alla prima prova
-    # di pubblicazione; rimuoverlo dopo aver verificato il caricamento su Hub.
+    # Pubblica soltanto da master, dopo tutti i controlli.
     if: >-
       github.repository == 'Vincenzo2002/Digitronics--SD-Version' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/lab-2a-containerization')
+      github.ref == 'refs/heads/master'
     uses: ./.github/workflows/docker-build.yml
     with:
       publish: true
