@@ -1,15 +1,16 @@
 name: Docker Build
 
-# Richiamato dalla CI soltanto dopo il successo di build-and-test.
-# Il riferimento locale usa lo stesso commit della pipeline chiamante.
+# ci.yml richiama questo workflow dopo il successo dei test Java.
 on:
   workflow_call:
     inputs:
+      # Con false verifica la build su AMD64. Con true pubblica per AMD64 e ARM64.
       publish:
         description: Pubblica su DockerHub dopo la build
         type: boolean
         default: false
     secrets:
+      # ci.yml passa le credenziali DockerHub solo al job di pubblicazione.
       DOCKER_USERNAME:
         required: false
       DOCKER_PASSWORD:
@@ -28,15 +29,14 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      # SHA delle release verificati: le action non cambiano tra le esecuzioni.
+      # Scarica lo stesso commit che ha superato i test Java.
       - name: Checkout tested commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      # L'emulazione permette al runner AMD64 di costruire anche per ARM64.
-      # La verifica delle pull request usa soltanto la piattaforma nativa.
+      # QEMU esegue programmi ARM64 sulla macchina AMD64 durante la build.
       - name: Set up QEMU
         if: inputs.publish
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
@@ -53,7 +53,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Tag del commit e del branch; latest rappresenta soltanto master.
+      # Assegna all'immagine un tag per il commit, uno per il branch e latest solo da master.
       - name: Generate image tags and labels
         if: inputs.publish
         id: meta
@@ -65,8 +65,7 @@ jobs:
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
 
-      # Maven compila il WAR nello stadio build del Dockerfile.
-      # I test sono già stati eseguiti dal job build-and-test della CI.
+      # Il Dockerfile crea il WAR dai sorgenti dopo che la CI ha eseguito i test.
       - name: Build image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -74,8 +73,11 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ inputs.publish && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           pull: true
+          # Carica l'immagine su DockerHub solo se publish è true.
           push: ${{ inputs.publish }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Recupera e salva la cache su GitHub Actions.
+          # mode=max include anche passaggi intermedi come il download delle dipendenze Maven.
           cache-from: type=gha,scope=digitronics
           cache-to: type=gha,mode=max,scope=digitronics

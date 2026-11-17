@@ -13,19 +13,22 @@ It was developed as a team project for the Software Engineering course at the **
 The only requirement is [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2. You do not need to install a JDK, Maven, MySQL or Tomcat.
 
 ```bash
-git clone https://github.com/Giop378/NC26_Digitronics.git
-cd NC26_Digitronics
+git clone https://github.com/Vincenzo2002/Digitronics--SD-Version.git
+cd Digitronics--SD-Version
 
-# 1. Create the database password secret (pick any value)
-cp secrets/db_password.txt.example secrets/db_password.txt   # Windows: copy secrets\db_password.txt.example secrets\db_password.txt
+# 1. Create the local secret only if it does not exist
+cp -n secrets/db_password.txt.example secrets/db_password.txt
+# Windows: copy secrets\db_password.txt.example secrets\db_password.txt (only if missing)
 
-# 2. Build and start the application and the database
+# 2. Set a dedicated password in secrets/db_password.txt, then build and start
 docker compose up --build
 ```
 
 Then open **<http://localhost:8080>**.
 
 On first start, MySQL creates the `digitronics` database and loads the sample data from [`sql/`](sql/). The web container starts only after the database reports healthy.
+
+The password file must contain only the password, on one line. It is excluded from Git and the Docker build context. Keep the existing value when reusing a database volume: editing the file alone does not change the password of an existing MySQL account.
 
 | Task | Command |
 |---|---|
@@ -34,7 +37,7 @@ On first start, MySQL creates the `digitronics` database and loads the sample da
 | Stop | `docker compose down` |
 | Stop and **delete the database** (re-runs the SQL scripts next time) | `docker compose down -v` |
 
-> The SQL scripts run only when the `db_data` volume is empty. After changing a file in `sql/`, run `docker compose down -v` to reload it.
+> The SQL scripts run only when the `db_data` volume is empty; they are not migrations for an existing database. `docker compose down -v` permanently deletes the volume and its data. Use it only for an intentional reset of disposable data; use a reviewed migration when existing data must be preserved.
 
 ### How the containers are set up
 
@@ -51,6 +54,10 @@ On first start, MySQL creates the `digitronics` database and loads the sample da
 
 * [`Dockerfile`](Dockerfile) uses a multi-stage build: Maven builds the WAR, and only the WAR is copied into a Tomcat image that runs as an unprivileged `tomcat` user.
 * [`docker-compose.yml`](docker-compose.yml) defines the `web` and `db` services, a named volume, health checks, `restart: on-failure`, and the database password as a Docker secret.
+
+The database check tests whether MySQL responds over TCP. The web check only tests whether Tomcat's TCP port is open; it does not verify HTTP responses or database queries. `depends_on` controls initial startup ordering, while the JDBC pool validates connections before reuse to support recovery after a database restart. Functional checks should include browsing products and searching after recovery.
+
+Compose publishes HTTP on port 8080 for local use. A production deployment requires separate TLS termination, for example with a reverse proxy.
 
 ---
 
@@ -135,7 +142,13 @@ The suite contains unit tests (Mockito) and integration tests (in-memory H2 data
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `./mvnw clean verify` on JDK 21 for every push to any branch and every pull request to `main`/`master`, and can also be started manually from the Actions tab. It uploads the test reports and the WAR as build artifacts.
 
-The pipeline stages and the practices used for reproducibility and code quality are described in [`report/01_CICD.md`](report/01_CICD.md).
+After `build-and-test` succeeds, pull requests also validate the Docker build for `linux/amd64`, without DockerHub credentials or publishing. Pushes and manual CI runs on `master` publish `linux/amd64` and `linux/arm64` images through [`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) to [DockerHub](https://hub.docker.com/r/vincenzo200230/digitronics). Images receive branch and full commit SHA tags; only `master` updates `latest`.
+
+The Docker workflow reads `DOCKER_USERNAME` and `DOCKER_PASSWORD` from GitHub repository secrets. `DOCKER_PASSWORD` must contain a DockerHub personal access token with read/write permissions. These registry credentials are separate from the local database password file.
+
+The original build-and-test pipeline and its practices are described in [`report/01_CICD.md`](report/01_CICD.md).
+
+Containerization choices, recovery and persistence experiments, DockerHub publishing results, and the self-audit of the Digitronics Docker pipeline are documented in [`report/Docker.md`](report/Docker.md).
 
 ---
 

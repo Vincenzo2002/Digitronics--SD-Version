@@ -44,7 +44,7 @@ public class ConPool {
     }
 
     /**
-     * Recupera una connessione al database dal pool tramite jdbv.
+     * Recupera una connessione al database dal pool tramite JDBC.
      *
      * Se il pool non è ancora stato inizializzato, viene configurato e creato.
      *
@@ -63,6 +63,10 @@ public class ConPool {
                 p.setMaxActive(100);
                 p.setInitialSize(10);
                 p.setMinIdle(10);
+                // Verifica la connessione prima di consegnarla all'applicazione:
+                // dopo un riavvio di MySQL il pool tenta di riconnettere quelle
+                // non valide. Il timeout della query è espresso in secondi;
+                // l'intervallo zero richiede la verifica a ogni prelievo.
                 p.setTestOnBorrow(true);
                 p.setValidationQuery("SELECT 1");
                 p.setValidationQueryTimeout(5);

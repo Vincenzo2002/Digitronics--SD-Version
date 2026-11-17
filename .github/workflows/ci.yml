@@ -62,6 +62,7 @@ jobs:
   validate-docker:
     name: Validate Docker build
     needs: build-and-test
+    # needs impedisce l'avvio se build, test o caricamento degli artifact falliscono.
     # Verifica il Dockerfile sul risultato del merge, senza secrets o push.
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/docker-build.yml
@@ -71,7 +72,8 @@ jobs:
   publish-docker:
     name: Publish Docker image
     needs: build-and-test
-    # Pubblica soltanto da master, dopo tutti i controlli.
+    # Pubblica soltanto da master, dopo tutti i controlli, su push (merge compreso)
+    # o avvio manuale della CI. Il controllo sul repository esclude le copie fork.
     if: >-
       github.repository == 'Vincenzo2002/Digitronics--SD-Version' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
