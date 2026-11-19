@@ -1,7 +1,6 @@
 package it.unisa.nc26.digitronics.gestioneProdotto.controller;
 
 import it.unisa.nc26.digitronics.gestioneProdotto.service.GestioneProdottoService;
-import it.unisa.nc26.digitronics.gestioneProdotto.service.GestioneProdottoServiceImpl;
 import it.unisa.nc26.digitronics.model.bean.Prodotto;
 import it.unisa.nc26.digitronics.model.bean.Utente;
 import it.unisa.nc26.digitronics.utils.ConPool;
@@ -11,16 +10,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -46,7 +44,10 @@ import static org.mockito.Mockito.verify;
  *
  * <p><b>Nota:</b> La classe utilizza il framework JUnit 4 e librerie per il mocking.</p>
  */
-public class ModificaProdottoServletIntegration {
+public class ModificaProdottoServletIntegrationTest {
+
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
 
     /**
      * Istanza della servlet sotto test.
@@ -87,7 +88,7 @@ public class ModificaProdottoServletIntegration {
      *
      * @throws SQLException se si verifica un errore durante la configurazione del database.
      */
-    @Before
+    @BeforeEach
     public  void setUp() throws SQLException {
 
         modificaProdottoServlet = new ModificaProdottoServlet();
@@ -110,7 +111,7 @@ public class ModificaProdottoServletIntegration {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -170,6 +171,16 @@ public class ModificaProdottoServletIntegration {
             ps.setString(8, "categoria");
             ps.executeUpdate();
         }
+    }
+
+    /**
+     * Ripristina {@link ConPool} e chiude il pool H2 dopo ogni test, così il
+     * DataSource non resta condiviso con i test successivi.
+     */
+    @AfterEach
+    public void tearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
     }
 
     /**

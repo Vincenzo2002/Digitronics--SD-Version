@@ -3,18 +3,17 @@ package it.unisa.nc26.digitronics.gestioneRecensione.service;
 import it.unisa.nc26.digitronics.model.bean.Recensione;
 import it.unisa.nc26.digitronics.model.dao.ProdottoDAO;
 import it.unisa.nc26.digitronics.model.dao.RecensioneDAO;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -24,7 +23,7 @@ import static org.mockito.Mockito.*;
  * che gestisce le recensioni, utilizzando Mockito per simulare il comportamento
  * dei DAO sottostanti.
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class RecensioneServiceImplTest {
     /** Istanza del servizio sotto test. */
     private RecensioneServiceImpl recensioneService;
@@ -41,7 +40,7 @@ public class RecensioneServiceImplTest {
      * Configura l'ambiente di test prima di ogni esecuzione.
      * Inizializza il servizio e assegna i DAO simulati.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         recensioneService = new RecensioneServiceImpl();
         recensioneService.setRecensioneDAO(mockRecensioneDAO);
@@ -103,12 +102,12 @@ public class RecensioneServiceImplTest {
      *
      * @throws SQLException se si verifica un errore simulato.
      */
-    @Test(expected = SQLException.class)
+    @Test
     public void testSaveRecensioneThrowsSQLException() throws SQLException {
         Recensione recensione = new Recensione();
         doThrow(new SQLException()).when(mockRecensioneDAO).doSave(recensione);
 
-        recensioneService.saveRecensione(recensione);
+        assertThrows(SQLException.class, () -> recensioneService.saveRecensione(recensione));
     }
 
     /**
@@ -117,12 +116,12 @@ public class RecensioneServiceImplTest {
      *
      * @throws SQLException se si verifica un errore simulato.
      */
-    @Test(expected = SQLException.class)
+    @Test
     public void testFetchByProductThrowsSQLException() throws SQLException {
         int idProdotto = 1;
         when(mockRecensioneDAO.doRetrieveByProduct(idProdotto)).thenThrow(new SQLException());
 
-        recensioneService.fetchByProduct(idProdotto);
+        assertThrows(SQLException.class, () -> recensioneService.fetchByProduct(idProdotto));
     }
 
     /**
@@ -131,12 +130,12 @@ public class RecensioneServiceImplTest {
      *
      * @throws SQLException se si verifica un errore simulato.
      */
-    @Test(expected = SQLException.class)
+    @Test
     public void testFetchByUtenteThrowsSQLException() throws SQLException {
         int idUtente = 1;
         when(mockRecensioneDAO.doRetrieveByUtente(idUtente)).thenThrow(new SQLException());
 
-        recensioneService.fetchByUtente(idUtente);
+        assertThrows(SQLException.class, () -> recensioneService.fetchByUtente(idUtente));
     }
 }
 

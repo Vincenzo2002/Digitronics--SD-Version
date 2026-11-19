@@ -1,6 +1,6 @@
 package it.unisa.nc26.digitronics.gestioneOrdine.service;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter.VerificaIndirizzoApiAdapter;
@@ -11,12 +11,14 @@ import it.unisa.nc26.digitronics.model.bean.Prodotto;
 import it.unisa.nc26.digitronics.model.dao.*;
 import it.unisa.nc26.digitronics.utils.MyServletException;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,8 @@ import java.util.List;
  * Classe di test per la classe {@link GestioneOrdineServiceImpl}.
  * Verifica il corretto funzionamento dei metodi implementati per la gestione degli ordini.
  */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class GestioneOrdineServiceImplTest {
 
     private GestioneOrdineServiceImpl service;
@@ -50,9 +54,8 @@ public class GestioneOrdineServiceImplTest {
     /**
      * Inizializza i mock e la service da testare.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         service = new GestioneOrdineServiceImpl();
 
         // Iniettare i mock
@@ -77,8 +80,8 @@ public class GestioneOrdineServiceImplTest {
         when(prodottoDAO.doRetrieveById(idProdotto)).thenReturn(prodotto);
 
         Prodotto result = service.fetchByIdProdotto(idProdotto);
-        assertNotNull("Il prodotto non deve essere null", result);
-        assertEquals("Il prodotto restituito deve essere quello atteso", prodotto, result);
+        assertNotNull(result, "Il prodotto non deve essere null");
+        assertEquals(prodotto, result, "Il prodotto restituito deve essere quello atteso");
         verify(prodottoDAO).doRetrieveById(idProdotto);
     }
 
@@ -110,8 +113,7 @@ public class GestioneOrdineServiceImplTest {
 
         List<MetodoSpedizione> result = service.fetchAllMetodiSpedizione();
         assertNotNull(result);
-        assertEquals("La lista dei metodi spedizione deve avere la dimensione attesa",
-                listaMetodi.size(), result.size());
+        assertEquals(listaMetodi.size(), result.size(), "La lista dei metodi spedizione deve avere la dimensione attesa");
         verify(metodoSpedizioneDAO).doRetrieveAll();
     }
 
@@ -193,7 +195,7 @@ public class GestioneOrdineServiceImplTest {
         when(verificaIndirizzoApiAdapter.verifica(via, cap, città)).thenReturn(true);
 
         boolean result = service.verificaIndirizzo(via, cap, città);
-        assertTrue("L'indirizzo dovrebbe essere verificato come valido", result);
+        assertTrue(result, "L'indirizzo dovrebbe essere verificato come valido");
         verify(verificaIndirizzoApiAdapter).verifica(via, cap, città);
     }
 
@@ -209,7 +211,7 @@ public class GestioneOrdineServiceImplTest {
         when(verificaIndirizzoApiAdapter.verifica(via, cap, città)).thenReturn(false);
 
         boolean result = service.verificaIndirizzo(via, cap, città);
-        assertFalse("L'indirizzo dovrebbe essere verificato come non valido", result);
+        assertFalse(result, "L'indirizzo dovrebbe essere verificato come non valido");
         verify(verificaIndirizzoApiAdapter).verifica(via, cap, città);
     }
 
@@ -224,9 +226,9 @@ public class GestioneOrdineServiceImplTest {
         when(ordineDAO.doRetrieveByCustomer(idUtente)).thenReturn(listaOrdini);
 
         List<Ordine> result = service.fetchByIdUtente(idUtente);
-        assertNotNull("Il metodo deve restituire una lista non nulla", result);
-        assertEquals("Il risultato deve avere la stessa dimensione della lista attesa", listaOrdini.size(), result.size());
-        assertEquals("Il risultato deve essere uguale alla lista attesa", listaOrdini, result);
+        assertNotNull(result, "Il metodo deve restituire una lista non nulla");
+        assertEquals(listaOrdini.size(), result.size(), "Il risultato deve avere la stessa dimensione della lista attesa");
+        assertEquals(listaOrdini, result, "Il risultato deve essere uguale alla lista attesa");
         verify(ordineDAO).doRetrieveByCustomer(idUtente);
     }
 
@@ -259,7 +261,7 @@ public class GestioneOrdineServiceImplTest {
 
         List<ItemOrdine> result = service.fetchItemOrder(idOrdine);
         assertNotNull(result);
-        assertFalse("La lista degli item deve non essere vuota", result.isEmpty());
+        assertFalse(result.isEmpty(), "La lista degli item deve non essere vuota");
         verify(itemOrdineDAO).doRetrieveByOrdine(idOrdine);
     }
 

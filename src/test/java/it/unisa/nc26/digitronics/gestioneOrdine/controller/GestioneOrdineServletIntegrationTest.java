@@ -1,5 +1,6 @@
 package it.unisa.nc26.digitronics.gestioneOrdine.controller;
 
+import it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter.VerificaIndirizzoApiAdapter;
 import it.unisa.nc26.digitronics.gestioneOrdine.service.GestioneOrdineServiceImpl;
 import it.unisa.nc26.digitronics.model.bean.*;
 import it.unisa.nc26.digitronics.utils.ConPool;
@@ -11,8 +12,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -21,11 +23,11 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 /**
@@ -34,6 +36,13 @@ import static org.mockito.Mockito.*;
  * utilizzando un database H2 in memoria per simulare il backend dei dati.
  */
 public class GestioneOrdineServletIntegrationTest {
+
+    /** Scadenza della carta sempre successiva alla data di esecuzione, così il test resta ripetibile nel tempo. */
+    private static final String SCADENZA_VALIDA =
+            LocalDate.now().plusYears(2).format(DateTimeFormatter.ofPattern("MM/yy"));
+
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
     /**
      * Oggetto GestioneOrdineServlet da testare.
      */
@@ -53,10 +62,17 @@ public class GestioneOrdineServletIntegrationTest {
      *
      * @throws SQLException in caso di errori nella configurazione del database.
      */
-    @Before
+    @BeforeEach
     public void setUp() throws SQLException {
         // Inizializza la servlet
         servlet = new GestioneOrdineServlet();
+
+        // Service reale con DAO su H2; solo l'API esterna di OpenStreetMap è sostituita da un mock
+        VerificaIndirizzoApiAdapter adapterMock = mock(VerificaIndirizzoApiAdapter.class);
+        when(adapterMock.verifica(anyString(), anyString(), anyString())).thenReturn(true);
+        GestioneOrdineServiceImpl service = new GestioneOrdineServiceImpl();
+        service.setVerificaIndirizzoApiAdapter(adapterMock);
+        servlet.setGestioneOrdineService(service);
 
         // Inizializza i mock per request, response, session e dispatcher
         requestMock = mock(HttpServletRequest.class);
@@ -79,7 +95,7 @@ public class GestioneOrdineServletIntegrationTest {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -147,6 +163,16 @@ public class GestioneOrdineServletIntegrationTest {
             ps.setDouble(3, 5.0);
             ps.executeUpdate();
         }
+    }
+
+    /**
+     * Ripristina {@link ConPool} e chiude il pool H2 dopo ogni test, così il
+     * DataSource non resta condiviso con i test successivi.
+     */
+    @AfterEach
+    public void tearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
     }
 
     /**
@@ -225,7 +251,7 @@ public class GestioneOrdineServletIntegrationTest {
         when(requestMock.getParameter("numeroCarta")).thenReturn("1111222233334444");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Anna Verdi");
         // Imposta una data futura
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("456");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
 

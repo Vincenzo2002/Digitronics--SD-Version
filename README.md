@@ -100,7 +100,7 @@ sql/                      # MySQL schema and seed data
 | Frontend | JSP / JSTL, HTML, CSS, JavaScript |
 | Database | MySQL 8 (H2 for integration tests) |
 | Build | Maven (Maven Wrapper included) |
-| Testing | JUnit 5 + JUnit 4 (vintage engine), Mockito 5, H2 |
+| Testing | JUnit Jupiter 6.1.3, Mockito 5.24.0, H2 |
 | Runtime | Apache Tomcat 10.1, Docker, Docker Compose |
 | CI | GitHub Actions |
 
@@ -136,7 +136,17 @@ Requirements: JDK 21, MySQL 8, Apache Tomcat 10.1.
 ./mvnw clean verify
 ```
 
-The suite contains unit tests (Mockito) and integration tests (in-memory H2 database) for the order, product and review modules. Test reports are written to `target/surefire-reports/`.
+The suite includes unit tests for modules such as authentication, registration and the shopping cart. Integration tests cover orders, products and reviews. Test reports are written to `target/surefire-reports/`.
+
+### Testing approach
+
+* **Unit tests** (JUnit 6.1.3, Mockito 5.24.0): services, servlets, the OpenStreetMap response parsing and password hashing in `Utente`. DAOs, the Servlet API and the OpenStreetMap address API are replaced by mocks.
+* **Integration tests** (JUnit 6.1.3, in-memory H2 in MySQL mode): services and controllers of the order, product and review modules using a dedicated test schema. The address API is mocked here too, so no test needs network access.
+* **System tests** (Selenium IDE): the test cases in [`projectDocs/testing/`](projectDocs/testing/).
+
+Tests follow the FIRST principles and cover critical paths, boundary values, error conditions and business rules.
+
+The testing strategy, tested scenarios and local results are described in [`report/03_testing.md`](report/03_testing.md).
 
 ## Continuous integration
 

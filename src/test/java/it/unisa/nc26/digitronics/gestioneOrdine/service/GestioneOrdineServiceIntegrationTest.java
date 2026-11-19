@@ -1,5 +1,6 @@
 package it.unisa.nc26.digitronics.gestioneOrdine.service;
 
+import it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter.VerificaIndirizzoApiAdapter;
 import it.unisa.nc26.digitronics.model.bean.ItemOrdine;
 import it.unisa.nc26.digitronics.model.bean.MetodoSpedizione;
 import it.unisa.nc26.digitronics.model.bean.Ordine;
@@ -8,16 +9,21 @@ import it.unisa.nc26.digitronics.utils.ConPool;
 import it.unisa.nc26.digitronics.utils.MyServletException;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class GestioneOrdineServiceIntegrationTest {
+
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
 
     private static GestioneOrdineServiceImpl service;
 
@@ -25,7 +31,7 @@ public class GestioneOrdineServiceIntegrationTest {
      * Questo metodo viene eseguito una sola volta prima di tutti i test e
      * inserisce i dati necessari seguendo l’ordine di inserimento specificato.
      */
-    @BeforeClass
+    @BeforeAll
     public static void globalSetUp() throws SQLException {
         // Configurazione del datasource H2 in memoria
         PoolProperties p = new PoolProperties();
@@ -39,7 +45,7 @@ public class GestioneOrdineServiceIntegrationTest {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -155,6 +161,16 @@ public class GestioneOrdineServiceIntegrationTest {
     }
 
     /**
+     * Ripristina {@link ConPool} e chiude il pool H2 al termine della classe, così il
+     * DataSource non resta condiviso con le altre classi di test.
+     */
+    @AfterAll
+    public static void globalTearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
+    }
+
+    /**
      * Test per il recupero di un prodotto esistente.
      */
     @Test
@@ -167,9 +183,10 @@ public class GestioneOrdineServiceIntegrationTest {
     /**
      * Test per il recupero di un prodotto inesistente.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testFetchByIdProdottoFail() throws MyServletException {
-        service.fetchByIdProdotto(999); // id inesistente
+        // id inesistente
+        assertThrows(MyServletException.class, () -> service.fetchByIdProdotto(999));
     }
 
     /**
@@ -305,14 +322,34 @@ public class GestioneOrdineServiceIntegrationTest {
     }
 
     /**
-     * Test per la verifica dell'indirizzo.
-     * In questo esempio, si assume che il metodo di verifica tramite
-     * {@code OpenStreetMapVerificaIndirizzoApiAdapterImpl} ritorni true per input validi.
+     * Test per la verifica di un indirizzo valido.
+     * L'API esterna di OpenStreetMap (Nominatim) è sostituita da un mock di
+     * {@link VerificaIndirizzoApiAdapter}, così il test non dipende dalla rete
+     * ed è ripetibile. Si verifica che il service restituisca l'esito dell'adapter.
      */
     @Test
     public void testVerificaIndirizzo() {
-        boolean isValid = service.verificaIndirizzo("Piazza Duomo", "84011", "Pogerola");
-        assertTrue(isValid);
+        VerificaIndirizzoApiAdapter adapterMock = mock(VerificaIndirizzoApiAdapter.class);
+        when(adapterMock.verifica("Piazza Duomo", "84011", "Pogerola")).thenReturn(true);
+        GestioneOrdineServiceImpl serviceConMock = new GestioneOrdineServiceImpl();
+        serviceConMock.setVerificaIndirizzoApiAdapter(adapterMock);
+
+        assertTrue(serviceConMock.verificaIndirizzo("Piazza Duomo", "84011", "Pogerola"));
+        verify(adapterMock).verifica("Piazza Duomo", "84011", "Pogerola");
+    }
+
+    /**
+     * Test per la verifica di un indirizzo inesistente, con l'API esterna simulata
+     * da un mock di {@link VerificaIndirizzoApiAdapter}.
+     */
+    @Test
+    public void testVerificaIndirizzoNonValido() {
+        VerificaIndirizzoApiAdapter adapterMock = mock(VerificaIndirizzoApiAdapter.class);
+        when(adapterMock.verifica("Via Inesistente", "00000", "Nessuna")).thenReturn(false);
+        GestioneOrdineServiceImpl serviceConMock = new GestioneOrdineServiceImpl();
+        serviceConMock.setVerificaIndirizzoApiAdapter(adapterMock);
+
+        assertFalse(serviceConMock.verificaIndirizzo("Via Inesistente", "00000", "Nessuna"));
     }
 }
 

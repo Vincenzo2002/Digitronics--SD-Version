@@ -109,25 +109,29 @@ public class AggiungiProdottoCarrelloServlet extends HttpServlet {
         itemCarrello.setProdotto(p);
         itemCarrello.setIdProdotto(p.getIdProdotto());
 
-        // Controlla che ci siano abbastanza prodotti in magazzino
-        if (quantità > p.getQuantità()) {
-            throw new MyServletException("Quantità selezionata del prodotto non presente in magazzino");
-        }
-        itemCarrello.setQuantità(quantità);
-
         // Controlla se il prodotto è già presente nel carrello
-        boolean prodottoTrovato = false;
+        ItemCarrello itemEsistente = null;
         for (ItemCarrello item : carrelloSession) {
             if (item.getIdProdotto() == itemCarrello.getIdProdotto()) {
-                // Aggiorna la quantità del prodotto esistente
-                item.setQuantità(item.getQuantità() + quantità);
-                prodottoTrovato = true;
+                itemEsistente = item;
                 break;
             }
         }
 
-        // Se il prodotto non è trovato, aggiungilo al carrello
-        if (!prodottoTrovato) {
+        // Controlla che ci siano abbastanza prodotti in magazzino, contando anche
+        // la quantità dello stesso prodotto già presente nel carrello
+        int quantitàNelCarrello = (itemEsistente == null) ? 0 : itemEsistente.getQuantità();
+        long quantitàTotale = (long) quantitàNelCarrello + quantità;
+        if (quantitàTotale > p.getQuantità()) {
+            throw new MyServletException("Quantità selezionata del prodotto non presente in magazzino");
+        }
+        itemCarrello.setQuantità(quantità);
+
+        if (itemEsistente != null) {
+            // Aggiorna la quantità del prodotto esistente
+            itemEsistente.setQuantità((int) quantitàTotale);
+        } else {
+            // Se il prodotto non è trovato, aggiungilo al carrello
             carrelloSession.add(itemCarrello);
         }
 

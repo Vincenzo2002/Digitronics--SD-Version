@@ -13,27 +13,36 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Classe di test per la {@code GestioneOrdineServlet}.
  * Questa classe verifica il corretto funzionamento delle funzionalità offerte dalla servlet.
  */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class GestioneOrdineServletTest {
+
+    /** Scadenza della carta sempre successiva alla data di esecuzione, così il test resta ripetibile nel tempo. */
+    private static final String SCADENZA_VALIDA =
+            LocalDate.now().plusYears(2).format(DateTimeFormatter.ofPattern("MM/yy"));
 
     private GestioneOrdineServlet servlet;
 
@@ -55,9 +64,8 @@ public class GestioneOrdineServletTest {
     /**
      * Inizializza i mock e la servlet da testare.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         servlet = new GestioneOrdineServlet();
 
         servlet.setGestioneOrdineService(serviceMock);
@@ -311,7 +319,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567890");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Mario Rossi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("123");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
         // Simula il recupero del metodo di spedizione
@@ -364,7 +372,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567890");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Mario Rossi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("123");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("SpedizioneNonEsistente");
         // Simula il recupero del metodo di spedizione
@@ -418,7 +426,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567891");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Luigi Bianchi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("11/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("321");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Express");
 
@@ -493,7 +501,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567890");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Mario Rossi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("123");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
 
@@ -572,7 +580,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567893");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Carlo Bianchi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("10/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("789");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
 
@@ -652,7 +660,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("numeroCarta")).thenReturn("1111222233334444");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Anna Verdi");
         // Imposta una data futura
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("456");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
 
@@ -738,7 +746,7 @@ public class GestioneOrdineServletTest {
         when(requestMock.getParameter("telefono")).thenReturn("+391234567801");
         when(requestMock.getParameter("numeroCarta")).thenReturn("1234567812345678");
         when(requestMock.getParameter("nomeIntestatario")).thenReturn("Giovanni Rossi");
-        when(requestMock.getParameter("scadenzaCarta")).thenReturn("12/30");
+        when(requestMock.getParameter("scadenzaCarta")).thenReturn(SCADENZA_VALIDA);
         when(requestMock.getParameter("cvv")).thenReturn("123");
         when(requestMock.getParameter("metodoSpedizione")).thenReturn("Standard");
 
