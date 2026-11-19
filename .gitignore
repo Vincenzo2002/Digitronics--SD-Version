@@ -38,6 +38,8 @@ build/
 Thumbs.db
 Desktop.ini
 ### Docker secrets (non committare le password reali) ###
+# I valori restano locali; sono tracciabili soltanto i file di esempio.
+# .dockerignore esclude separatamente secrets/ anche dal contesto della build.
 secrets/*
 !secrets/*.example
 

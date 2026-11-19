@@ -1,24 +1,26 @@
 services:
   db:
     image: mysql:8.4
+    # Riavvia il container se MySQL termina con un errore.
     restart: on-failure
     environment:
       MYSQL_DATABASE: digitronics
       MYSQL_USER: digitronics
       MYSQL_PASSWORD_FILE: /run/secrets/db_password
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    # Rende disponibile la password nel file /run/secrets/db_password.
     secrets:
       - db_password
     volumes:
+      # Conserva i dati anche ricreando il container; down -v li elimina.
       - db_data:/var/lib/mysql
-      # Eseguiti in ordine alfabetico solo al primo avvio (volume vuoto)
+      # Script eseguiti in ordine 01-04 solo su database nuovo; ro = sola lettura.
       - ./sql/DigitronicsDB.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./sql/AltriInserimenti.sql:/docker-entrypoint-initdb.d/02_categorie_spedizioni.sql:ro
       - ./sql/InserimentoProdotti.sql:/docker-entrypoint-initdb.d/03_prodotti.sql:ro
       - ./sql/Utenti.sql:/docker-entrypoint-initdb.d/04_utenti.sql:ro
     healthcheck:
-      # Via TCP: durante l'inizializzazione MySQL accetta solo il socket locale,
-      # quindi il check diventa "healthy" solo quando gli script sono stati eseguiti
+      # Verifica che MySQL risponda, senza controllare credenziali o tabelle.
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
       interval: 10s
       timeout: 5s
@@ -26,30 +28,39 @@ services:
       start_period: 30s
 
   web:
+    # Costruisce l'immagine locale usando il Dockerfile di questa cartella.
     build: .
     image: digitronics:latest
     restart: on-failure
     depends_on:
       db:
+        # Avvia web dopo che db ha superato il controllo di salute.
         condition: service_healthy
     environment:
+      # Il nome db identifica il container MySQL sulla rete Compose.
       DB_URL: "jdbc:mysql://db:3306/digitronics?serverTimezone=UTC&allowPublicKeyRetrieval=true"
       DB_USER: digitronics
       DB_PASSWORD_FILE: /run/secrets/db_password
+    # Condivide con web la stessa password usata dal servizio db.
     secrets:
       - db_password
     ports:
+      # Collega la porta 8080 del Mac alla porta 8080 di Tomcat.
       - "8080:8080"
     healthcheck:
+      # Verifica che la porta Tomcat sia aperta, senza controllare pagine o database.
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 40s
 
+# Associa il secret db_password al file locale, escluso da Git e dall'immagine.
+# Cambiare il file non aggiorna la password di un account MySQL già creato.
 secrets:
   db_password:
     file: ./secrets/db_password.txt
 
+# Dichiara il volume che il servizio db usa per conservare i dati MySQL.
 volumes:
   db_data:

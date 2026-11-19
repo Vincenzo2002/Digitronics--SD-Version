@@ -1,4 +1,8 @@
-# Ignora tutto tranne ciò che serve al build
+# Il builder riceve soltanto pom.xml e src/, necessari alla build multi-stage.
+# Restano esclusi .git, target/, documentazione e secrets/:
+# credenziali locali e artefatti precedenti non entrano nel contesto di build.
+# Dockerfile e .dockerignore vengono comunque letti da Docker per la build.
 *
+# Le eccezioni seguenti riabilitano il pom e l'albero dei sorgenti.
 !pom.xml
 !src/
