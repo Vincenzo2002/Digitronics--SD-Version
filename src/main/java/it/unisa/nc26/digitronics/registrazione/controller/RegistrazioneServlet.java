@@ -78,9 +78,11 @@ public class RegistrazioneServlet extends HttpServlet {
         Boolean admin = false;
 
         // Validazione dei dati di input
-        if (nome == null || !nome.matches("[a-zA-Z ]+") ||
-                cognome == null || !cognome.matches("[a-zA-Z ]+") ||
-                email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$") ||
+        // Nome e cognome: stesso formato del checkout (lettere, anche accentate, spazi e apostrofi)
+        if (nome == null || !nome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$") ||
+                cognome == null || !cognome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$") ||
+                // Il dominio di primo livello può avere più di 4 caratteri (es. .museum)
+                email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,}$") ||
                 password == null || password.length() < 8) {
             throw new MyServletException("Dati in input non validi");
         }

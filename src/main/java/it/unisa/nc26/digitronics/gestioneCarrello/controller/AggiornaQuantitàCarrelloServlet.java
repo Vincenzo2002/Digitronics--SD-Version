@@ -16,12 +16,16 @@ import org.json.simple.parser.JSONParser;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Servlet per la gestione dell'aggiornamento delle quantità dei prodotti nel carrello.
  */
 @WebServlet("/aggiorna-quantità-carrello")
 public class AggiornaQuantitàCarrelloServlet extends HttpServlet {
+
+    private static final Logger LOGGER = Logger.getLogger(AggiornaQuantitàCarrelloServlet.class.getName());
     private GestioneCarrelloService gestioneCarrelloService;
 
     /**
@@ -118,7 +122,8 @@ public class AggiornaQuantitàCarrelloServlet extends HttpServlet {
                     session.setAttribute("carrello", carrelloSession);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // Richiesta non valida del client (es. parametro non numerico): risposta 400, dettaglio solo nel log
+                LOGGER.log(Level.FINE, "Richiesta di aggiornamento della quantità non valida", e);
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 JSONObject error = new JSONObject();
                 error.put("message", "Errore durante l'elaborazione della richiesta");

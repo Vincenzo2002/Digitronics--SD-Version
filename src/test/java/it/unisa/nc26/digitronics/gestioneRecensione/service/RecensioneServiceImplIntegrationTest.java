@@ -1,20 +1,18 @@
 package it.unisa.nc26.digitronics.gestioneRecensione.service;
 
-import it.unisa.nc26.digitronics.gestioneOrdine.service.GestioneOrdineServiceImpl;
 import it.unisa.nc26.digitronics.model.bean.Recensione;
 import it.unisa.nc26.digitronics.utils.ConPool;
-import it.unisa.nc26.digitronics.utils.MyServletException;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Classe di test di integrazione per {@link RecensioneServiceImpl}.
@@ -26,6 +24,9 @@ import static org.junit.Assert.*;
  */
 public class RecensioneServiceImplIntegrationTest {
 
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
+
 
     /**
      * Istanza del servizio di recensioni da testare.
@@ -36,7 +37,7 @@ public class RecensioneServiceImplIntegrationTest {
      * Questo metodo viene eseguito una sola volta prima di tutti i test e
      * inserisce i dati necessari seguendo l’ordine di inserimento specificato.
      */
-    @BeforeClass
+    @BeforeAll
     public static void globalSetUp() throws SQLException {
         // Configurazione del datasource H2 in memoria
         PoolProperties p = new PoolProperties();
@@ -50,7 +51,7 @@ public class RecensioneServiceImplIntegrationTest {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -173,6 +174,16 @@ public class RecensioneServiceImplIntegrationTest {
         }
 
         // A questo punto il database è popolato con tutti i dati necessari per i test.
+    }
+
+    /**
+     * Ripristina {@link ConPool} e chiude il pool H2 al termine della classe, così il
+     * DataSource non resta condiviso con le altre classi di test.
+     */
+    @AfterAll
+    public static void globalTearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
     }
 
 

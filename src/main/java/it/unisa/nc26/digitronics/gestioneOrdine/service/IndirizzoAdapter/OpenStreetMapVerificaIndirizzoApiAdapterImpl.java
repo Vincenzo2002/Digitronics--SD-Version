@@ -2,8 +2,10 @@ package it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,14 +28,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
     @Override
     public boolean verifica(String via, String cap, String città) {
         try {
-            // Costruzione dell'URL per l'API di OpenStreetMap (Nominatim)
-            String baseUrl = "https://nominatim.openstreetmap.org/search";
-            String query = String.format("%s, %s, %s, Italia", via, cap, città);
-            String urlStr = String.format("%s?q=%s&format=json&addressdetails=1&countrycodes=it",
-                    baseUrl,
-                    query.replace(" ", "+"));
-
-            URL url = new URL(urlStr);
+            URL url = URI.create(costruisciUrl(via, cap, città)).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Digitronics/1.0)");
@@ -53,38 +48,70 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
             }
             in.close();
 
-            // Parsing della risposta JSON
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(response.toString());
-
-            // Se l'array JSON è vuoto, l'indirizzo non esiste
-            if (!rootNode.isArray() || rootNode.size() == 0) {
-                return false;
-            }
-
-            // Verifica se l'indirizzo corrisponde alla via, CAP e città specificati
-            for (JsonNode node : rootNode) {
-                JsonNode address = node.get("address");
-                if (address != null) {
-                    String returnedCity = address.path("city").asText("").toLowerCase();
-                    String returnedHamlet = address.path("hamlet").asText("").toLowerCase();
-                    String returnedVillage = address.path("village").asText("").toLowerCase();
-                    String returnedPostcode = address.path("postcode").asText("");
-                    String returnedRoad = address.path("road").asText("").toLowerCase();
-
-                    boolean cittàEsiste = città.toLowerCase().equals(returnedCity) ||
-                            città.toLowerCase().equals(returnedHamlet) ||
-                            città.toLowerCase().equals(returnedVillage);
-
-                    if (cittàEsiste &&
-                            returnedPostcode.equals(cap) &&
-                            returnedRoad.contains(via.toLowerCase())) {
-                        return true;
-                    }
-                }
-            }
+            return contieneIndirizzo(response.toString(), via, cap, città);
         } catch (Exception e) {
             throw new RuntimeException("Errore durante la verifica dell'indirizzo: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Costruisce l'URL della ricerca su OpenStreetMap (Nominatim), limitata agli indirizzi italiani.
+     *
+     * @param via   il nome della via
+     * @param cap   il codice di avviamento postale (CAP)
+     * @param città il nome della città
+     * @return l'URL della richiesta
+     */
+    static String costruisciUrl(String via, String cap, String città) {
+        String baseUrl = "https://nominatim.openstreetmap.org/search";
+        String query = String.format("%s, %s, %s, Italia", via, cap, città);
+        return String.format("%s?q=%s&format=json&addressdetails=1&countrycodes=it",
+                baseUrl,
+                query.replace(" ", "+"));
+    }
+
+    /**
+     * Controlla se la risposta JSON di Nominatim contiene un indirizzo con la città
+     * (anche come frazione o paese), il CAP e la via indicati. Il confronto su città
+     * e via non distingue maiuscole e minuscole; la via può essere parte del nome restituito.
+     *
+     * @param rispostaJson il corpo della risposta dell'API
+     * @param via          il nome della via
+     * @param cap          il codice di avviamento postale (CAP)
+     * @param città        il nome della città
+     * @return true se almeno un risultato corrisponde, false altrimenti
+     * @throws JsonProcessingException se la risposta non è un JSON valido
+     */
+    static boolean contieneIndirizzo(String rispostaJson, String via, String cap, String città)
+            throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(rispostaJson);
+
+        // Se l'array JSON è vuoto, l'indirizzo non esiste
+        if (!rootNode.isArray() || rootNode.size() == 0) {
+            return false;
+        }
+
+        // Verifica se l'indirizzo corrisponde alla via, CAP e città specificati
+        for (JsonNode node : rootNode) {
+            JsonNode address = node.get("address");
+            if (address != null) {
+                String returnedCity = address.path("city").asText("").toLowerCase();
+                String returnedHamlet = address.path("hamlet").asText("").toLowerCase();
+                String returnedVillage = address.path("village").asText("").toLowerCase();
+                String returnedPostcode = address.path("postcode").asText("");
+                String returnedRoad = address.path("road").asText("").toLowerCase();
+
+                boolean cittàEsiste = città.toLowerCase().equals(returnedCity) ||
+                        città.toLowerCase().equals(returnedHamlet) ||
+                        città.toLowerCase().equals(returnedVillage);
+
+                if (cittàEsiste &&
+                        returnedPostcode.equals(cap) &&
+                        returnedRoad.contains(via.toLowerCase())) {
+                    return true;
+                }
+            }
         }
         return false;
     }

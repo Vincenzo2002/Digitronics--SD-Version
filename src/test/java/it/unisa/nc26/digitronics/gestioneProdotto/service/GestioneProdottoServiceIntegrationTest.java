@@ -1,22 +1,21 @@
 package it.unisa.nc26.digitronics.gestioneProdotto.service;
 
 
-import it.unisa.nc26.digitronics.gestioneOrdine.service.GestioneOrdineServiceImpl;
 import it.unisa.nc26.digitronics.model.bean.Categoria;
 import it.unisa.nc26.digitronics.model.bean.Prodotto;
 import it.unisa.nc26.digitronics.utils.ConPool;
 import it.unisa.nc26.digitronics.utils.MyServletException;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -41,6 +40,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p><b>Nota:</b> La classe utilizza il framework JUnit 4.</p>
  */
 public class GestioneProdottoServiceIntegrationTest {
+
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
     /**
      * Servizio sotto test.
      */
@@ -57,7 +59,7 @@ public class GestioneProdottoServiceIntegrationTest {
      *
      * @throws SQLException se si verifica un errore durante la configurazione del database.
      */
-    @BeforeClass
+    @BeforeAll
     public static void globalSetUp() throws SQLException {
         // Configurazione del datasource H2 in memoria
         PoolProperties p = new PoolProperties();
@@ -71,7 +73,7 @@ public class GestioneProdottoServiceIntegrationTest {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -131,6 +133,16 @@ public class GestioneProdottoServiceIntegrationTest {
             ps.setString(8, "categoria");
             ps.executeUpdate();
         }
+    }
+
+    /**
+     * Ripristina {@link ConPool} e chiude il pool H2 al termine della classe, così il
+     * DataSource non resta condiviso con le altre classi di test.
+     */
+    @AfterAll
+    public static void globalTearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
     }
     /**
      * Testa la modifica di un prodotto nel database.

@@ -49,6 +49,15 @@ jobs:
           path: target/surefire-reports/
           if-no-files-found: ignore
 
+      # Report di coverage di JaCoCo (HTML, XML e CSV), caricato anche se un test fallisce.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: ignore
+
       # Il WAR viene caricato solo se build e test hanno successo,
       # con lo SHA del commit nel nome e conservato per 30 giorni.
       - name: Upload WAR

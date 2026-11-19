@@ -28,11 +28,11 @@
         <form action="registrazione-servlet" method="post" onsubmit="return validatePassword()">
             <div class="input-group">
                 <label for="nome">Nome</label>
-                <input type="text" id="nome" name="nome" required pattern="[a-zA-Z ]+" title="Inserisci solo lettere e spazi">
+                <input type="text" id="nome" name="nome" required pattern="[a-zA-Zà-ÿÀ-Ÿ' ]+" title="Inserisci solo lettere, spazi e apostrofi">
             </div>
             <div class="input-group">
                 <label for="cognome">Cognome</label>
-                <input type="text" id="cognome" name="cognome" required pattern="[a-zA-Z ]+" title="Inserisci solo lettere e spazi">
+                <input type="text" id="cognome" name="cognome" required pattern="[a-zA-Zà-ÿÀ-Ÿ' ]+" title="Inserisci solo lettere, spazi e apostrofi">
             </div>
             <div class="input-group">
                 <label for="email">Email</label>

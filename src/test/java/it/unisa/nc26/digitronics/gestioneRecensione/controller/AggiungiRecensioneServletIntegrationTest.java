@@ -1,23 +1,23 @@
 package it.unisa.nc26.digitronics.gestioneRecensione.controller;
 
-import it.unisa.nc26.digitronics.gestioneOrdine.controller.GestioneOrdineServlet;
 import it.unisa.nc26.digitronics.gestioneRecensione.service.RecensioneServiceImpl;
 import it.unisa.nc26.digitronics.model.bean.Recensione;
 import it.unisa.nc26.digitronics.model.bean.Utente;
 import it.unisa.nc26.digitronics.utils.ConPool;
 import it.unisa.nc26.digitronics.utils.MyServletException;
-import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -26,20 +26,25 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Classe di test d'integrazione per la servlet AggiungiRecensione.
  * Questa classe testa il comportamento della servlet in diversi scenari,
  * utilizzando un database H2 in memoria per simulare il backend dei dati.
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class AggiungiRecensioneServletIntegrationTest {
+
+    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
+    private static DataSource h2DataSource;
 
     /**
      * Oggetto AggiungiRecensione da testare.
@@ -64,7 +69,7 @@ public class AggiungiRecensioneServletIntegrationTest {
      *
      * @throws SQLException in caso di errori nella configurazione del database.
      */
-    @Before
+    @BeforeEach
     public void setUp() throws SQLException {
         // Inizializza la servlet
         servlet = new AggiungiRecensioneServlet();
@@ -81,7 +86,7 @@ public class AggiungiRecensioneServletIntegrationTest {
         p.setMinIdle(10);
         p.setRemoveAbandonedTimeout(60);
         p.setRemoveAbandoned(true);
-        DataSource h2DataSource = new DataSource();
+        h2DataSource = new DataSource();
         h2DataSource.setPoolProperties(p);
 
         // Sostituisci il datasource in ConPool
@@ -162,18 +167,28 @@ public class AggiungiRecensioneServletIntegrationTest {
         }
     }
 
-    @Test(expected = MyServletException.class)
+    /**
+     * Ripristina {@link ConPool} e chiude il pool H2 dopo ogni test, così il
+     * DataSource non resta condiviso con i test successivi.
+     */
+    @AfterEach
+    public void tearDown() {
+        ConPool.setDataSource(null);
+        h2DataSource.close();
+    }
+
+    @Test
     public void testUtenteNonRegistrato() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(null);
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se il titolo della recensione non è valido.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testTitoloNonValido() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -183,13 +198,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("3");
         when(request.getParameter("productId")).thenReturn("1");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se la descrizione della recensione non è valida.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testDescrizioneNonValido() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -199,13 +214,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("3");
         when(request.getParameter("productId")).thenReturn("1");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se il punteggio è vuoto.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testPunteggioVuoto() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -215,13 +230,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("");
         when(request.getParameter("productId")).thenReturn("1");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se il punteggio è fuori dai limiti consentiti.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testPunteggioNonValido() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -231,13 +246,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("6");
         when(request.getParameter("productId")).thenReturn("1");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se il punteggio non è un numero.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testPunteggioNonNumero() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -247,13 +262,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("nonNumero");
         when(request.getParameter("productId")).thenReturn("1");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} se l'ID del prodotto è vuoto.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testIdProdottoVuoto() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -263,13 +278,13 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("5");
         when(request.getParameter("productId")).thenReturn("");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**
      * Verifica che venga sollevata un'eccezione {@link MyServletException} in caso di errore del database.
      */
-    @Test(expected = MyServletException.class)
+    @Test
     public void testErroreDatabase() throws Exception {
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("utente")).thenReturn(utente);
@@ -280,7 +295,7 @@ public class AggiungiRecensioneServletIntegrationTest {
         when(request.getParameter("score")).thenReturn("5");
         when(request.getParameter("productId")).thenReturn("10000");
 
-        servlet.doGet(request, response);
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
     }
 
     /**

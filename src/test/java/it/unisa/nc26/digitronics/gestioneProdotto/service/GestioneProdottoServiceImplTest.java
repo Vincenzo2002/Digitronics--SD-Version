@@ -1,7 +1,7 @@
 package it.unisa.nc26.digitronics.gestioneProdotto.service;
 
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import it.unisa.nc26.digitronics.model.bean.Categoria;
 import it.unisa.nc26.digitronics.model.bean.Prodotto;
@@ -9,11 +9,11 @@ import it.unisa.nc26.digitronics.model.dao.CategoriaDAO;
 import it.unisa.nc26.digitronics.model.dao.ProdottoDAO;
 import it.unisa.nc26.digitronics.utils.MyServletException;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Test della classe {@link GestioneProdottoServiceImpl}.
@@ -23,7 +23,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * Include vari test unitari per verificare il comportamento con input validi
  * e non validi, assicurandosi che i metodi del servizio funzionino come previsto.
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class GestioneProdottoServiceImplTest {
 
     /** Oggetto del servizio da testare, con mock iniettati. */

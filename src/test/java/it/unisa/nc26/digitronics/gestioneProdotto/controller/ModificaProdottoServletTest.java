@@ -1,18 +1,14 @@
 package it.unisa.nc26.digitronics.gestioneProdotto.controller;
 import it.unisa.nc26.digitronics.gestioneProdotto.service.GestioneProdottoService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import it.unisa.nc26.digitronics.model.bean.*;
 import it.unisa.nc26.digitronics.utils.MyServletException;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Classe di test per la servlet {@link ModificaProdottoServlet}.
@@ -32,7 +28,7 @@ public class ModificaProdottoServletTest {
      * Metodo di setup eseguito prima di ogni test.
      * Inizializza gli oggetti necessari e configura i mock per i test.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         // Creazione dell'oggetto servlet
         modificaProdottoServlet = new ModificaProdottoServlet();
