@@ -2,9 +2,9 @@
 
 ## Obiettivo e configurazione
 
-Il laboratorio ha esteso la suite automatica di Digitronics per individuare regressioni nei percorsi critici. Il [Test Plan](../projectDocs/testing/documenti/TP_Digitronics_2024-25.pdf) prevedeva test di unità e integrazione per checkout, modifica prodotto e aggiunta recensione. Le 12 classi esistenti sono state aggiornate e ne sono state aggiunte 17 per verificare autenticazione, registrazione, carrello, catalogo, gestione dei prodotti e accesso agli ordini.
+Il laboratorio ha esteso la suite automatica di Digitronics per individuare regressioni nei percorsi critici. Il [Test Plan](../projectDocs/testing/documenti/TP_Digitronics_2024-25.pdf) prevedeva test di unità e integrazione per checkout, modifica prodotto e aggiunta recensione. Le 12 classi esistenti sono state aggiornate e ne sono state aggiunte 18 per verificare autenticazione, registrazione, carrello, catalogo, gestione dei prodotti e accesso agli ordini.
 
-La suite usa JUnit Jupiter 6.1.3 e Mockito 5.24.0. I test ancora su JUnit 4 sono stati migrati a Jupiter e il motore Vintage è stato rimosso dal [pom.xml](../pom.xml). Maven Surefire, già usato dal progetto, è stato aggiornato alla versione 3.5.4. Mockito viene caricato all'avvio della JVM dei test con `-javaagent` per evitare l'avviso di aggancio dinamico su Java 21. In locale, `./mvnw -B clean verify` su Java 21 ha superato tutti i **235 test** e prodotto il WAR.
+La suite usa JUnit Jupiter 6.1.3 e Mockito 5.24.0. I test ancora su JUnit 4 sono stati migrati a Jupiter e il motore Vintage è stato rimosso dal [pom.xml](../pom.xml). Maven Surefire, già usato dal progetto, è stato aggiornato alla versione 3.5.4. Mockito viene caricato all'avvio della JVM dei test con `-javaagent` per evitare l'avviso di aggancio dinamico su Java 21. In locale, `./mvnw -B clean verify` su Java 21 ha superato tutti i **238 test** e prodotto il WAR.
 
 ## Strategia di testing
 
@@ -25,6 +25,6 @@ Le chiamate ai servizi esterni sono sostituite da mock per poter controllare il 
 ## Scenari verificati
 
 1. **Autenticazione e registrazione.** Al login del cliente il carrello della sessione viene unito a quello salvato. Al logout il carrello viene salvato e la sessione chiusa. La registrazione rifiuta una password di 7 caratteri e ne accetta una di 8.
-2. **Carrello e ordini.** I test esercitano aggiunta, aggiornamento e rimozione dei prodotti. Durante l'aggiunta, un totale pari alla scorta è accettato. Se il totale supera la scorta, la richiesta è respinta e la quantità nel carrello resta quella precedente. Lo storico mostra al cliente i suoi ordini e all'amministratore l'elenco completo. L'accesso senza login viene respinto. `ShowItemOrderServlet` mostra i dettagli al proprietario e all'amministratore. Per un altro cliente la richiesta viene respinta prima di recuperare gli articoli.
+2. **Carrello e ordini.** I test esercitano visualizzazione, aggiunta, aggiornamento e rimozione dei prodotti. All'apertura del carrello, `MostraCarrelloServlet` riduce le quantità che superano la scorta. Durante l'aggiunta, un totale pari alla scorta è accettato. Se il totale supera la scorta, la richiesta è respinta e la quantità nel carrello resta quella precedente. Lo storico mostra al cliente i suoi ordini e all'amministratore l'elenco completo. L'accesso senza login viene respinto. `ShowItemOrderServlet` mostra i dettagli al proprietario e all'amministratore. Per un altro cliente la richiesta viene respinta prima di recuperare gli articoli.
 3. **Catalogo e gestione dei prodotti.** I test coprono la ricerca senza risultati, l'aggiunta e la rimozione riservate all'amministratore e il limite delle immagini. Un file di 10 MiB è accettato e un byte in più causa il rifiuto.
 4. **Oggetti del dominio.** Sono verificati il calcolo dell'hash della password in `Utente` e il confronto tra ordini in base all'identificativo.
