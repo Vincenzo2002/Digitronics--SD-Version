@@ -142,6 +142,18 @@ class RegistrazioneServletTest {
     }
 
     @Test
+    void nomeConSegnoDiMoltiplicazione_rifiutato() {
+        when(request.getParameter("nome")).thenReturn("Mario×");
+        assertDatiNonValidi();
+    }
+
+    @Test
+    void cognomeConSegnoDiDivisione_rifiutato() {
+        when(request.getParameter("cognome")).thenReturn("Rossi÷");
+        assertDatiNonValidi();
+    }
+
+    @Test
     void nomeVuoto_rifiutato() {
         impostaParametri("", "Rossi", "mario.rossi@test.it", "password1", "2000-01-15");
         assertDatiNonValidi();

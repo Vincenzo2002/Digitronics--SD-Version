@@ -121,14 +121,15 @@ public class AggiungiProdottoCarrelloServlet extends HttpServlet {
         // Controlla che ci siano abbastanza prodotti in magazzino, contando anche
         // la quantità dello stesso prodotto già presente nel carrello
         int quantitàNelCarrello = (itemEsistente == null) ? 0 : itemEsistente.getQuantità();
-        if (quantitàNelCarrello + quantità > p.getQuantità()) {
+        long quantitàTotale = (long) quantitàNelCarrello + quantità;
+        if (quantitàTotale > p.getQuantità()) {
             throw new MyServletException("Quantità selezionata del prodotto non presente in magazzino");
         }
         itemCarrello.setQuantità(quantità);
 
         if (itemEsistente != null) {
             // Aggiorna la quantità del prodotto esistente
-            itemEsistente.setQuantità(quantitàNelCarrello + quantità);
+            itemEsistente.setQuantità((int) quantitàTotale);
         } else {
             // Se il prodotto non è trovato, aggiungilo al carrello
             carrelloSession.add(itemCarrello);

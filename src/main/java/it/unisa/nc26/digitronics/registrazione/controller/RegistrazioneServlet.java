@@ -23,6 +23,9 @@ import java.util.List;
 @WebServlet("/registrazione-servlet")
 public class RegistrazioneServlet extends HttpServlet {
 
+    // Gli intervalli Unicode escludono i simboli × e ÷.
+    private static final String FORMATO_NOME = "^(?!\\s*$)[a-zA-ZÀ-ÖØ-öø-Ÿ\\s']{1,255}$";
+
     private RegistrazioneService registrazioneService;
 
     /**
@@ -78,9 +81,8 @@ public class RegistrazioneServlet extends HttpServlet {
         Boolean admin = false;
 
         // Validazione dei dati di input
-        // Nome e cognome: stesso formato del checkout (lettere, anche accentate, spazi e apostrofi)
-        if (nome == null || !nome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$") ||
-                cognome == null || !cognome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$") ||
+        if (nome == null || !nome.matches(FORMATO_NOME) ||
+                cognome == null || !cognome.matches(FORMATO_NOME) ||
                 // Il dominio di primo livello può avere più di 4 caratteri (es. .museum)
                 email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,}$") ||
                 password == null || password.length() < 8) {

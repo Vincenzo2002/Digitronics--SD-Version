@@ -4,8 +4,8 @@ import it.unisa.nc26.digitronics.model.bean.Recensione;
 import it.unisa.nc26.digitronics.utils.ConPool;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
@@ -20,25 +20,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * che gestisce le recensioni, utilizzando un database H2 in memoria.
  *
  * <p>La configurazione iniziale del database e i dati di test vengono
- * impostati utilizzando il metodo {@link #globalSetUp()}.</p>
+ * reimpostati prima di ogni prova con {@link #setUp()}.</p>
  */
 public class RecensioneServiceImplIntegrationTest {
 
-    /** Pool H2 usato dai test, chiuso al termine per non condividerlo con le altre classi. */
-    private static DataSource h2DataSource;
+    /** Pool H2 ricreato per ogni test. */
+    private DataSource h2DataSource;
 
 
     /**
      * Istanza del servizio di recensioni da testare.
      */
-    private static RecensioneServiceImpl service;
+    private RecensioneServiceImpl service;
 
     /**
-     * Questo metodo viene eseguito una sola volta prima di tutti i test e
-     * inserisce i dati necessari seguendo l’ordine di inserimento specificato.
+     * Ricrea il database e carica i dati iniziali prima di ogni test.
      */
-    @BeforeAll
-    public static void globalSetUp() throws SQLException {
+    @BeforeEach
+    void setUp() throws SQLException {
         // Configurazione del datasource H2 in memoria
         PoolProperties p = new PoolProperties();
         // Si assicuri che il file database.sql sia coerente con quanto riportato qui
@@ -177,13 +176,14 @@ public class RecensioneServiceImplIntegrationTest {
     }
 
     /**
-     * Ripristina {@link ConPool} e chiude il pool H2 al termine della classe, così il
-     * DataSource non resta condiviso con le altre classi di test.
+     * Ripristina {@link ConPool} e chiude il pool H2 dopo ogni test.
      */
-    @AfterAll
-    public static void globalTearDown() {
+    @AfterEach
+    void tearDown() {
         ConPool.setDataSource(null);
-        h2DataSource.close();
+        if (h2DataSource != null) {
+            h2DataSource.close();
+        }
     }
 
 

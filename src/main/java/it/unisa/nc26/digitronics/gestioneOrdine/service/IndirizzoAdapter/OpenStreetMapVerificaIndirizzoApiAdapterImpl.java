@@ -2,7 +2,6 @@ package it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,7 +27,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
     @Override
     public boolean verifica(String via, String cap, String città) {
         try {
-            URL url = URI.create(costruisciUrl(via, cap, città)).toURL();
+            URL url = new URL(costruisciUrl(via, cap, città));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Digitronics/1.0)");

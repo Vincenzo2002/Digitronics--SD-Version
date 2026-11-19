@@ -226,6 +226,18 @@ class AggiungiProdottoCarrelloServletTest {
         assertEquals(4, esistente.getQuantità());
     }
 
+    @Test
+    void sommaOltreIlMassimoDiInt_rifiutataSenzaModificareIlCarrello() {
+        prodotto.setQuantità(Integer.MAX_VALUE);
+        ItemCarrello esistente = itemNelCarrello(Integer.MAX_VALUE);
+        impostaParametri(String.valueOf(ID_PRODOTTO), "1");
+
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
+
+        assertEquals(Integer.MAX_VALUE, esistente.getQuantità());
+        assertEquals(List.of(esistente), carrello);
+    }
+
     /** Valore limite: la somma con la quantità già nel carrello pari alla scorta è accettata. */
     @Test
     void sommaUgualeAllaScorta_accettata() throws Exception {
