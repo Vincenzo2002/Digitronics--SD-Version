@@ -1,7 +1,9 @@
 package it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,8 +29,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
     @Override
     public boolean verifica(String via, String cap, String città) {
         try {
-            URL url = new URL(costruisciUrl(via, cap, città));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn = apriConnessione(costruisciUrl(via, cap, città));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Digitronics/1.0)");
 
@@ -51,6 +52,19 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
         } catch (Exception e) {
             throw new RuntimeException("Errore durante la verifica dell'indirizzo: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Apre la connessione HTTP verso l'URL indicato. È un metodo a parte perché i test
+     * lo sostituiscono con una connessione simulata, senza usare la rete.
+     *
+     * @param url l'URL della richiesta
+     * @return la connessione, non ancora avviata
+     * @throws IOException se la connessione non si può aprire
+     */
+    HttpURLConnection apriConnessione(String url) throws IOException {
+        URL indirizzo = URI.create(url).toURL();
+        return (HttpURLConnection) indirizzo.openConnection();
     }
 
     /**

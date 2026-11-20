@@ -3,12 +3,18 @@ package it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
- * Test di unità di {@link OpenStreetMapVerificaIndirizzoApiAdapterImpl}: costruzione dell'URL
- * e interpretazione della risposta JSON di Nominatim. Nessun test effettua chiamate di rete:
- * le risposte dell'API sono stringhe JSON scritte nel test.
+ * Test di unità di {@link OpenStreetMapVerificaIndirizzoApiAdapterImpl}: costruzione dell'URL,
+ * interpretazione della risposta JSON di Nominatim e chiamata HTTP. Nessun test effettua chiamate
+ * di rete: le risposte dell'API sono stringhe JSON scritte nel test e la connessione è un mock.
  */
 class OpenStreetMapVerificaIndirizzoApiAdapterImplTest {
 
@@ -125,5 +131,82 @@ class OpenStreetMapVerificaIndirizzoApiAdapterImplTest {
     void contieneIndirizzo_jsonNonValido_lanciaEccezione() {
         assertThrows(JsonProcessingException.class, () -> OpenStreetMapVerificaIndirizzoApiAdapterImpl
                 .contieneIndirizzo("non è json", "Via Antonio Cantore", "00195", "Roma"));
+    }
+
+    // --- Verifica completa con la connessione HTTP simulata ---
+
+    /** Adapter la cui connessione verso Nominatim è sostituita da {@code connessione}. */
+    private static OpenStreetMapVerificaIndirizzoApiAdapterImpl adapterCon(HttpURLConnection connessione) {
+        return new OpenStreetMapVerificaIndirizzoApiAdapterImpl() {
+            @Override
+            HttpURLConnection apriConnessione(String url) {
+                return connessione;
+            }
+        };
+    }
+
+    private static HttpURLConnection connessioneCheRisponde(int codice, String corpo) throws IOException {
+        HttpURLConnection connessione = mock(HttpURLConnection.class);
+        when(connessione.getResponseCode()).thenReturn(codice);
+        when(connessione.getInputStream())
+                .thenReturn(new ByteArrayInputStream(corpo.getBytes(StandardCharsets.UTF_8)));
+        return connessione;
+    }
+
+    /** Percorso critico: la richiesta è una GET con User-Agent e la risposta contiene l'indirizzo. */
+    @Test
+    void verifica_indirizzoTrovato_true() throws IOException {
+        HttpURLConnection connessione = connessioneCheRisponde(200, RISPOSTA_ROMA);
+
+        assertTrue(adapterCon(connessione).verifica("Via Antonio Cantore", "00195", "Roma"));
+        verify(connessione).setRequestMethod("GET");
+        verify(connessione).setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Digitronics/1.0)");
+    }
+
+    /** Una risposta su più righe viene letta per intero. */
+    @Test
+    void verifica_rispostaSuPiuRighe_true() throws IOException {
+        String json = "[{\"address\":\n {\"road\": \"Via Antonio Cantore\",\n"
+                + " \"city\": \"Roma\", \"postcode\": \"00195\"}}]";
+
+        assertTrue(adapterCon(connessioneCheRisponde(200, json)).verifica("Via Antonio Cantore", "00195", "Roma"));
+    }
+
+    @Test
+    void verifica_indirizzoNonTrovato_false() throws IOException {
+        assertFalse(adapterCon(connessioneCheRisponde(200, "[]")).verifica("Via Inesistente", "00000", "Nessuna"));
+    }
+
+    /** Un codice HTTP diverso da 200 è un errore della verifica. */
+    @Test
+    void verifica_rispostaNon200_lanciaEccezione() throws IOException {
+        HttpURLConnection connessione = connessioneCheRisponde(503, "");
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> adapterCon(connessione).verifica("Via Antonio Cantore", "00195", "Roma"));
+        assertEquals("Errore durante la verifica dell'indirizzo: "
+                + "Errore durante la connessione all'API di OpenStreetMap: 503", ex.getMessage());
+    }
+
+    /** Un errore di rete diventa un errore della verifica, con la causa originale. */
+    @Test
+    void verifica_erroreDiRete_lanciaEccezione() throws IOException {
+        HttpURLConnection connessione = mock(HttpURLConnection.class);
+        IOException causa = new IOException("rete non raggiungibile");
+        when(connessione.getResponseCode()).thenThrow(causa);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> adapterCon(connessione).verifica("Via Antonio Cantore", "00195", "Roma"));
+        assertSame(causa, ex.getCause());
+    }
+
+    /** Senza sostituzioni l'adapter apre una connessione HTTP verso l'URL indicato (senza inviarla). */
+    @Test
+    void apriConnessione_creaConnessioneHttpVersoLUrl() throws IOException {
+        String url = OpenStreetMapVerificaIndirizzoApiAdapterImpl.costruisciUrl("Via Roma", "84010", "Furore");
+
+        HttpURLConnection connessione = new OpenStreetMapVerificaIndirizzoApiAdapterImpl().apriConnessione(url);
+
+        assertEquals(url, connessione.getURL().toString());
     }
 }
