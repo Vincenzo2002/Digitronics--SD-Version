@@ -148,9 +148,24 @@ Tests follow the FIRST principles and cover critical paths, boundary values, err
 
 The testing strategy, tested scenarios and local results are described in [`report/03_testing.md`](report/03_testing.md).
 
+### Coverage and mutation testing
+
+```bash
+# Tests, JaCoCo report and coverage quality gate
+./mvnw clean verify
+
+# Mutation testing with PITest and its quality gate
+./mvnw test-compile org.pitest:pitest-maven:mutationCoverage
+```
+
+* **JaCoCo** writes the coverage report to `target/site/jacoco/`. The build fails if any package is below 80% line coverage, 75% branch coverage or 100% class coverage.
+* **PITest** writes the mutation report to `target/pit-reports/`. It fails if the mutation score or the line coverage of the mutated classes is below 80%. The `test-compile` phase is needed because it prepares the JaCoCo and Mockito agents used by the tests.
+
+The coverage configuration, results and improvement plan are described in [`report/04_coverage.md`](report/04_coverage.md). The mutation testing configuration, results and improvement plan are described in [`report/05_mutation.md`](report/05_mutation.md).
+
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `./mvnw clean verify` on JDK 21 for every push to any branch and every pull request to `main`/`master`, and can also be started manually from the Actions tab. It uploads the test reports and the WAR as build artifacts.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `./mvnw clean verify` on JDK 21 for every push to any branch and every pull request to `main`/`master`, and can also be started manually from the Actions tab. After the build, it uploads the JaCoCo XML report to [Codecov](https://about.codecov.io/) using the `CODECOV_TOKEN` repository secret, then runs PITest with its quality gate. It uploads the test reports, the JaCoCo and PITest reports and the WAR as build artifacts.
 
 After `build-and-test` succeeds, pull requests also validate the Docker build for `linux/amd64`, without DockerHub credentials or publishing. Pushes and manual CI runs on `master` publish `linux/amd64` and `linux/arm64` images through [`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) to [DockerHub](https://hub.docker.com/r/vincenzo200230/digitronics). Images receive branch and full commit SHA tags; only `master` updates `latest`.
 

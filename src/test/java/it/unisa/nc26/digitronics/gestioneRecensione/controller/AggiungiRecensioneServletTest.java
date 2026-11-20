@@ -209,4 +209,53 @@ public class AggiungiRecensioneServletTest {
         // Verifica che venga effettuato il reindirizzamento corretto
         verify(response).sendRedirect("dettagliProdotto?id=1");
     }
+
+    // --- Valori limite (mutanti sopravvissuti a PITest) ---
+
+    /** Parametri validi per una recensione, con titolo e punteggio indicati. */
+    private void parametriRecensione(String titolo, String punteggio) {
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("utente")).thenReturn(utente);
+        when(utente.getIdUtente()).thenReturn(1);
+        when(request.getParameter("title")).thenReturn(titolo);
+        when(request.getParameter("description")).thenReturn("Descrizione valida");
+        when(request.getParameter("score")).thenReturn(punteggio);
+        when(request.getParameter("productId")).thenReturn("1");
+    }
+
+    /** Valore limite: un titolo di esattamente 255 caratteri è accettato. */
+    @Test
+    public void testTitoloDi255Caratteri() throws Exception {
+        parametriRecensione("T".repeat(255), "3");
+
+        servlet.doGet(request, response);
+
+        verify(response).sendRedirect("dettagliProdotto?id=1");
+    }
+
+    /** Valore limite: un titolo di 256 caratteri è rifiutato. */
+    @Test
+    public void testTitoloDi256Caratteri() throws Exception {
+        parametriRecensione("T".repeat(256), "3");
+
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
+    }
+
+    /** Valore limite: il punteggio minimo 1 è accettato. */
+    @Test
+    public void testPunteggioMinimo() throws Exception {
+        parametriRecensione("Titolo valido", "1");
+
+        servlet.doGet(request, response);
+
+        verify(response).sendRedirect("dettagliProdotto?id=1");
+    }
+
+    /** Valore limite: il punteggio 0 è rifiutato. */
+    @Test
+    public void testPunteggioZero() throws Exception {
+        parametriRecensione("Titolo valido", "0");
+
+        assertThrows(MyServletException.class, () -> servlet.doGet(request, response));
+    }
 }
