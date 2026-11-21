@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -157,22 +158,23 @@ class ConPoolTest {
         assertEquals("Connessione persa col database, riprova più tardi", ex.getMessage());
     }
 
-    /**
-     * Se la configurazione non si può leggere il pool non viene creato: la chiamata fallisce
-     * e quella successiva rilegge la configurazione, usando il DataSource impostato nel frattempo.
-     */
+    /** Ogni tentativo rilegge la configurazione finché il file della password resta illeggibile. */
     @Test
-    void getConnection_configurazioneNonLeggibile_nonCreaIlPool() throws Exception {
+    void getConnection_configurazioneNonLeggibile_rileggeLaConfigurazione() {
         variabili.put("DB_PASSWORD_FILE", cartella.resolve("mancante.txt").toString());
-        usaVariabili();
+        AtomicInteger letturePasswordFile = new AtomicInteger();
+        ConPool.ambiente = nome -> {
+            if ("DB_PASSWORD_FILE".equals(nome)) {
+                letturePasswordFile.incrementAndGet();
+            }
+            return variabili.get(nome);
+        };
 
         RuntimeException ex = assertThrows(RuntimeException.class, ConPool::getConnection);
         assertEquals("Connessione persa col database, riprova più tardi", ex.getMessage());
+        assertEquals(1, letturePasswordFile.get());
 
-        DataSource datasource = mock(DataSource.class);
-        Connection connessione = mock(Connection.class);
-        when(datasource.getConnection()).thenReturn(connessione);
-        ConPool.setDataSource(datasource);
-        assertSame(connessione, ConPool.getConnection());
+        assertThrows(RuntimeException.class, ConPool::getConnection);
+        assertEquals(2, letturePasswordFile.get());
     }
 }

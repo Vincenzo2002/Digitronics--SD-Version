@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,13 +25,25 @@ class OpenStreetMapVerificaIndirizzoApiAdapterImplTest {
 
     // --- Costruzione dell'URL ---
 
-    /** L'URL contiene la query con gli spazi sostituiti da "+" ed è limitato all'Italia. */
+    /** L'URL contiene la query codificata ed è limitato all'Italia. */
     @Test
     void costruisciUrl_componeLaQueryPerNominatim() {
         String url = OpenStreetMapVerificaIndirizzoApiAdapterImpl.costruisciUrl("Piazza Duomo", "84011", "Pogerola");
 
         assertEquals("https://nominatim.openstreetmap.org/search"
-                + "?q=Piazza+Duomo,+84011,+Pogerola,+Italia&format=json&addressdetails=1&countrycodes=it", url);
+                + "?q=Piazza+Duomo%2C+84011%2C+Pogerola%2C+Italia&format=json&addressdetails=1&countrycodes=it", url);
+    }
+
+    @Test
+    void costruisciUrl_codificaICaratteriSpecialiNelParametroDiRicerca() {
+        String url = OpenStreetMapVerificaIndirizzoApiAdapterImpl
+                .costruisciUrl("Via Città 100% + A & B #2", "00100", "Roma");
+
+        URI indirizzo = URI.create(url);
+
+        assertEquals("q=Via+Citt%C3%A0+100%25+%2B+A+%26+B+%232%2C+00100%2C+Roma%2C+Italia"
+                + "&format=json&addressdetails=1&countrycodes=it", indirizzo.getRawQuery());
+        assertNull(indirizzo.getFragment());
     }
 
     // --- Indirizzo trovato ---

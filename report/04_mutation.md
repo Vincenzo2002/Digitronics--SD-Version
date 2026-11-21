@@ -29,7 +29,7 @@ Comando: `./mvnw test-compile org.pitest:pitest-maven:mutationCoverage`. Il `tes
 | Test strength | 95% | 99% |
 | Line coverage delle classi mutate | 97% | 97% (1.442/1.483) |
 
-Per operatore, dopo i nuovi test: `NEGATE_CONDITIONALS` 200 su 200, `MATH` 11 su 11, `CONDITIONALS_BOUNDARY` 17 su 19. `INVERT_NEGS` non genera mutanti, perché nel codice non ci sono numeri negati.
+Mutanti rilevati per operatore: `NEGATE_CONDITIONALS` 200 su 200 (1 in timeout), `MATH` 11 su 11, `CONDITIONALS_BOUNDARY` 17 su 19. `INVERT_NEGS` non ha generato mutanti.
 
 **Schemi ricorrenti nei 12 mutanti non rilevati alla prima esecuzione:**
 - **Confini non provati (9 su 11):** `>` diventava `>=` senza che nessun test se ne accorgesse, perché mancavano i valori esattamente al limite. Riguardava la quantità pari alla scorta nel checkout, la lunghezza di 255 caratteri di nome, categoria e titolo della recensione, e il punteggio minimo 1. Due di questi, sui limiti della scorta nel carrello, sono equivalenti (vedi sotto).

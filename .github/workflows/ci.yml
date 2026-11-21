@@ -40,15 +40,6 @@ jobs:
       - name: Build and run tests
         run: ./mvnw -B clean verify
 
-      # Invia a Codecov il report XML di JaCoCo generato da "verify".
-      # Il token è il secret CODECOV_TOKEN della repo, mai scritto nel file.
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: target/site/jacoco/jacoco.xml
-          fail_ci_if_error: true
-
       # Mutation testing con le soglie di PITest (mutation score e line coverage all'80%).
       # "test-compile" esegue le fasi in cui Maven prepara gli agent di JaCoCo e Mockito
       # usati dai test: senza, PITest non riesce ad avviarli.
@@ -84,6 +75,34 @@ jobs:
           name: digitronics-${{ github.sha }}
           path: target/digitronics.war
           retention-days: 30
+
+  publish-coverage:
+    name: Publish JaCoCo coverage to Codecov
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # L'artifact contiene entrambi i report, con target come radice comune.
+      - name: Download quality reports
+        uses: actions/download-artifact@v4
+        with:
+          name: quality-reports
+          path: target
+
+      # Un problema del servizio compare in questo job, separato dai controlli per Docker.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: target/site/jacoco/jacoco.xml
+          disable_search: true
+          fail_ci_if_error: true
 
   validate-docker:
     name: Validate Docker build

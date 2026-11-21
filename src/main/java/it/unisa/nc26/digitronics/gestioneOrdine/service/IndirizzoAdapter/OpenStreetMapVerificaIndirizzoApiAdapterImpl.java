@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -80,7 +82,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
         String query = String.format("%s, %s, %s, Italia", via, cap, città);
         return String.format("%s?q=%s&format=json&addressdetails=1&countrycodes=it",
                 baseUrl,
-                query.replace(" ", "+"));
+                URLEncoder.encode(query, StandardCharsets.UTF_8));
     }
 
     /**

@@ -18,7 +18,7 @@ Il quality gate vale per **ogni pacchetto** (`<element>PACKAGE</element>`):
 | Rami (`BRANCH`) | 75% |
 | Classi (`CLASS`) | 100% |
 
-`./mvnw clean verify` esegue test, report e controllo. In CI ([`ci.yml`](../.github/workflows/ci.yml)) il report XML viene inviato a **Codecov** con il secret `CODECOV_TOKEN`, e i report HTML vengono salvati come artifact `quality-reports`.
+`./mvnw clean verify` esegue test, report e controllo. La [CI](../.github/workflows/ci.yml) salva i report nell'artifact `quality-reports`. Un job separato scarica l'artifact e invia l'XML di JaCoCo a **Codecov** con `CODECOV_TOKEN`.
 
 ## 2. Analisi
 
@@ -31,17 +31,17 @@ Con il quality gate attivo, la prima esecuzione falliva su 4 pacchetti:
 | `model.dao` | 43% | 29% | 8/8 |
 | `gestioneOrdine.service.IndirizzoAdapter` | 63% | 83% | 1/1 |
 
-Dopo i nuovi test (354 in totale, tutti verdi) tutti i pacchetti rispettano le soglie:
+Dopo i nuovi test (355 in totale, tutti verdi) tutti i pacchetti rispettano le soglie:
 
 | Metrica | Coperto | Percentuale |
 |---|---|---|
 | **Righe** | 1.656 / 1.702 | **97,3%** |
 | **Rami** | 405 / 445 | **91,0%** |
-| Istruzioni | 6.068 / 6.195 | 97,9% |
+| Istruzioni | 6.067 / 6.194 | 97,9% |
 | Metodi | 285 / 299 | 95,3% |
 | Classi | 46 / 46 | 100% |
 
-**Classi con la coverage più bassa (righe):** `RimuoviProdottoCarrelloServlet` 81,8%, `ShowItemOrderServlet` 82,1%, `ConPool` 86,1%, `StoricoOrdiniServlet` 90,0%. Per i rami il pacchetto più basso è `model.bean` (75,0%, esattamente la soglia), seguito da `gestioneOrdine.controller` (86,2%).
+**Classi con la coverage più bassa (righe):** `RimuoviProdottoCarrelloServlet` 81,8%, `ShowItemOrderServlet` 82,1%, `ConPool` 86,1%, `StoricoOrdiniServlet` 90,0%. Per i rami il pacchetto più basso è `model.bean` (75,0%, esattamente la soglia), seguito da `gestioneRecensione.controller` (83,3%) e `gestioneOrdine.controller` (86,2%).
 
 **Metodi non coperti (14):**
 - `doPost` di 11 servlet, che si limita a chiamare `doGet`;
@@ -51,7 +51,8 @@ Dopo i nuovi test (354 in totale, tutti verdi) tutti i pacchetti rispettano le s
 **Come è stata alzata la coverage:**
 - test di unità per le servlet di `infoProdotto` e `utils`;
 - test dei DAO su H2 in memoria, con gli errori del database simulati con Mockito;
-- test della chiamata HTTP dell'adapter OpenStreetMap con una connessione simulata.
+- test della chiamata HTTP simulata e della codifica UTF-8 del parametro di ricerca dell'adapter OpenStreetMap;
+- test della rilettura della configurazione di `ConPool` dopo un errore di accesso al file della password.
 
 Per renderli possibili sono stati separati in metodi sostituibili nei test la lettura delle variabili d'ambiente in `ConPool` e l'apertura della connessione nell'adapter. I test hanno anche fatto emergere un difetto: `CategoriaDAO.doSave` inseriva nella tabella `utente` invece che in `categoria`. È stato corretto.
 
