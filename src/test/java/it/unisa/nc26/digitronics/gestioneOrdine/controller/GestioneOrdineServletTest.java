@@ -1006,4 +1006,110 @@ public class GestioneOrdineServletTest {
         }
     }
 
+    // --- Valori limite e aggiornamento della scorta (mutanti sopravvissuti a PITest) ---
+
+    /** Carrello del cliente con un solo prodotto nella quantità indicata. */
+    private void carrelloConUnProdotto(int idProdotto, int quantita) {
+        ItemCarrello item = new ItemCarrello();
+        item.setIdProdotto(idProdotto);
+        item.setQuantità(quantita);
+        List<ItemCarrello> carrello = new ArrayList<>();
+        carrello.add(item);
+        when(sessionMock.getAttribute("carrello")).thenReturn(carrello);
+    }
+
+    private Prodotto prodottoConScorta(int idProdotto, int scorta, double prezzo) throws MyServletException {
+        Prodotto prodotto = new Prodotto();
+        prodotto.setIdProdotto(idProdotto);
+        prodotto.setNome("Prodotto" + idProdotto);
+        prodotto.setImmagine("img" + idProdotto + ".jpg");
+        prodotto.setQuantità(scorta);
+        prodotto.setPrezzo(prezzo);
+        when(serviceMock.fetchByIdProdotto(idProdotto)).thenReturn(prodotto);
+        return prodotto;
+    }
+
+    /**
+     * Valore limite all'inizio del checkout: una quantità pari alla scorta è disponibile
+     * e il totale è prezzo per quantità.
+     */
+    @Test
+    public void checkoutConQuantitaPariAllaScorta() throws Exception {
+        Utente utente = new Utente();
+        utente.setIdUtente(70);
+        utente.setRuolo(false);
+        when(sessionMock.getAttribute("utente")).thenReturn(utente);
+        carrelloConUnProdotto(700, 3);
+        prodottoConScorta(700, 3, 10.0);
+        when(serviceMock.fetchAllMetodiSpedizione()).thenReturn(new ArrayList<>());
+        when(requestMock.getServletPath()).thenReturn("/inizio-checkout");
+        when(requestMock.getRequestDispatcher("/WEB-INF/results/checkout.jsp")).thenReturn(requestDispatcherMock);
+
+        servlet.doGet(requestMock, responseMock);
+
+        verify(requestMock).setAttribute("prezzoTotale", 30.0);
+        verify(requestDispatcherMock).forward(requestMock, responseMock);
+    }
+
+    /**
+     * Indirizzo non verificato con quantità pari alla scorta: si torna al checkout con il totale
+     * ricalcolato come prezzo per quantità (con 2 pezzi la moltiplicazione si distingue dalla divisione).
+     */
+    @Test
+    public void indirizzoNonVerificatoConQuantitaPariAllaScorta() throws Exception {
+        setupValidPagamentoRequest();
+        carrelloConUnProdotto(601, 2);
+        prodottoConScorta(601, 2, 20.0);
+        when(serviceMock.verificaIndirizzo("Via Roma", "12345", "Roma")).thenReturn(false);
+        when(serviceMock.fetchAllMetodiSpedizione()).thenReturn(new ArrayList<>());
+        when(requestMock.getRequestDispatcher("/WEB-INF/results/checkout.jsp")).thenReturn(requestDispatcherMock);
+
+        servlet.doGet(requestMock, responseMock);
+
+        verify(requestMock).setAttribute("prezzoTotale", 40.0);
+        verify(requestMock).setAttribute(eq("erroreIndirizzo"), anyString());
+        verify(requestDispatcherMock).forward(requestMock, responseMock);
+    }
+
+    /**
+     * Ordine confermato con quantità pari alla scorta: l'ordine va a buon fine e la scorta
+     * del prodotto scende a zero.
+     */
+    @Test
+    public void confermaOrdineConQuantitaPariAllaScortaAzzeraLaScorta() throws Exception {
+        setupValidPagamentoRequest();
+        carrelloConUnProdotto(601, 3);
+        prodottoConScorta(601, 3, 10.0);
+        when(serviceMock.verificaIndirizzo("Via Roma", "12345", "Roma")).thenReturn(true);
+        when(serviceMock.saveOrdine(any(Ordine.class))).thenReturn(1);
+        when(requestMock.getRequestDispatcher("/WEB-INF/results/confirm-order.jsp")).thenReturn(requestDispatcherMock);
+
+        servlet.doGet(requestMock, responseMock);
+
+        ArgumentCaptor<Prodotto> prodottoAggiornato = ArgumentCaptor.forClass(Prodotto.class);
+        verify(serviceMock).updateQuantitàProdotto(prodottoAggiornato.capture());
+        assertEquals(0, prodottoAggiornato.getValue().getQuantità());
+        ArgumentCaptor<Ordine> ordine = ArgumentCaptor.forClass(Ordine.class);
+        verify(requestMock).setAttribute(eq("ordine"), ordine.capture());
+        // spedizione Standard (5.0) + 3 * 10.0
+        assertEquals(35.0, ordine.getValue().getTotale(), 0.001);
+        verify(requestDispatcherMock).forward(requestMock, responseMock);
+    }
+
+    /** Dopo l'ordine la scorta di ogni prodotto diminuisce della quantità ordinata. */
+    @Test
+    public void confermaOrdineDiminuisceLaScortaDellaQuantitaOrdinata() throws Exception {
+        setupValidPagamentoRequest();
+        carrelloConUnProdotto(601, 2);
+        prodottoConScorta(601, 10, 10.0);
+        when(serviceMock.verificaIndirizzo("Via Roma", "12345", "Roma")).thenReturn(true);
+        when(serviceMock.saveOrdine(any(Ordine.class))).thenReturn(1);
+        when(requestMock.getRequestDispatcher("/WEB-INF/results/confirm-order.jsp")).thenReturn(requestDispatcherMock);
+
+        servlet.doGet(requestMock, responseMock);
+
+        ArgumentCaptor<Prodotto> prodottoAggiornato = ArgumentCaptor.forClass(Prodotto.class);
+        verify(serviceMock).updateQuantitàProdotto(prodottoAggiornato.capture());
+        assertEquals(8, prodottoAggiornato.getValue().getQuantità());
+    }
 }
