@@ -1,8 +1,12 @@
 package it.unisa.nc26.digitronics.gestioneOrdine.service.IndirizzoAdapter;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,8 +31,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
     @Override
     public boolean verifica(String via, String cap, String città) {
         try {
-            URL url = new URL(costruisciUrl(via, cap, città));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn = apriConnessione(costruisciUrl(via, cap, città));
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; Digitronics/1.0)");
 
@@ -54,6 +57,19 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
     }
 
     /**
+     * Apre la connessione HTTP verso l'URL indicato. È un metodo a parte perché i test
+     * lo sostituiscono con una connessione simulata, senza usare la rete.
+     *
+     * @param url l'URL della richiesta
+     * @return la connessione, non ancora avviata
+     * @throws IOException se la connessione non si può aprire
+     */
+    HttpURLConnection apriConnessione(String url) throws IOException {
+        URL indirizzo = URI.create(url).toURL();
+        return (HttpURLConnection) indirizzo.openConnection();
+    }
+
+    /**
      * Costruisce l'URL della ricerca su OpenStreetMap (Nominatim), limitata agli indirizzi italiani.
      *
      * @param via   il nome della via
@@ -66,7 +82,7 @@ public class OpenStreetMapVerificaIndirizzoApiAdapterImpl implements VerificaInd
         String query = String.format("%s, %s, %s, Italia", via, cap, città);
         return String.format("%s?q=%s&format=json&addressdetails=1&countrycodes=it",
                 baseUrl,
-                query.replace(" ", "+"));
+                URLEncoder.encode(query, StandardCharsets.UTF_8));
     }
 
     /**

@@ -362,5 +362,50 @@ public class ModificaProdottoServletTest {
             assertEquals("Il prezzo deve essere un valore numerico valido con almeno due cifre decimali (es. 10.00)", e.getMessage());
         }
     }
-}
 
+    // --- Valori limite sulla lunghezza (mutanti sopravvissuti a PITest) ---
+
+    /** Parametri validi per la modifica, con nome e categoria indicati. */
+    private void parametriModifica(String nome, String categoria) {
+        when(session.getAttribute("utente")).thenReturn(utente);
+        when(utente.isRuolo()).thenReturn(true);
+        when(request.getSession()).thenReturn(session);
+        when(request.getParameter("id")).thenReturn("1");
+        when(request.getParameter("nome")).thenReturn(nome);
+        when(request.getParameter("descrizione")).thenReturn("Descrizione valida");
+        when(request.getParameter("prezzo")).thenReturn("499.99");
+        when(request.getParameter("quantita")).thenReturn("10");
+        when(request.getParameter("nomecategoria")).thenReturn(categoria);
+        when(request.getRequestDispatcher("WEB-INF/results/confirm-operation.jsp")).thenReturn(requestDispatcher);
+    }
+
+    /** Valore limite: un nome di esattamente 255 caratteri è accettato. */
+    @Test
+    public void testDoGet_NomeProdottoDi255Caratteri() throws Exception {
+        parametriModifica("A".repeat(255), "Elettronica");
+
+        modificaProdottoServlet.doGet(request, response);
+
+        verify(modificaProdottoService).modificaProdotto(any(Prodotto.class));
+        verify(requestDispatcher).forward(request, response);
+    }
+
+    /** Valore limite: un nome di categoria di esattamente 255 caratteri è accettato. */
+    @Test
+    public void testDoGet_CategoriaDi255Caratteri() throws Exception {
+        parametriModifica("Telefono", "C".repeat(255));
+
+        modificaProdottoServlet.doGet(request, response);
+
+        verify(modificaProdottoService).modificaProdotto(any(Prodotto.class));
+    }
+
+    /** Valore limite: un nome di categoria di 256 caratteri è rifiutato. */
+    @Test
+    public void testDoGet_CategoriaDi256Caratteri() throws Exception {
+        parametriModifica("Telefono", "C".repeat(256));
+
+        assertThrows(MyServletException.class, () -> modificaProdottoServlet.doGet(request, response));
+        verify(modificaProdottoService, never()).modificaProdotto(any(Prodotto.class));
+    }
+}

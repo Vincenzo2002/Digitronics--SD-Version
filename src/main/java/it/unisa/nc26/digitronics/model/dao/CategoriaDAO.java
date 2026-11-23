@@ -87,7 +87,7 @@ public class CategoriaDAO {
      */
     public void doSave(Categoria categoria) {
         try (Connection con = ConPool.getConnection()) {
-            PreparedStatement ps = con.prepareStatement("INSERT INTO utente () VALUES(?,?,?)");
+            PreparedStatement ps = con.prepareStatement("INSERT INTO categoria (nome, descrizione, immagine) VALUES(?,?,?)");
             ps.setString(1, categoria.getNome());
             ps.setString(2, categoria.getDescrizione());
             ps.setString(3, categoria.getImmagine());

@@ -65,6 +65,8 @@ public class RegistrazioneServlet extends HttpServlet {
                 RequestDispatcher requestDispatcher = request.getRequestDispatcher("/WEB-INF/results/profile.jsp");
                 requestDispatcher.forward(request, response);
             }
+            // Un utente già autenticato non può registrarsi di nuovo
+            return;
         }
 
         // Gestione della registrazione

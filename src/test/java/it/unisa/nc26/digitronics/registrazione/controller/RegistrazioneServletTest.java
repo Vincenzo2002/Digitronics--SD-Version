@@ -222,4 +222,37 @@ class RegistrazioneServletTest {
 
         verify(service).registraUtente(any(Utente.class));
     }
+
+    // --- Utente già autenticato (riga non coperta segnalata da PITest) ---
+
+    private static Utente autenticato(boolean admin) {
+        Utente utente = new Utente();
+        utente.setIdUtente(5);
+        utente.setRuolo(admin);
+        return utente;
+    }
+
+    /** Un admin già autenticato torna alla sua area e non viene registrato di nuovo. */
+    @Test
+    void adminGiaAutenticato_vaAllAreaAdminSenzaRegistrare() throws Exception {
+        when(session.getAttribute("utente")).thenReturn(autenticato(true));
+
+        servlet.doGet(request, response);
+
+        verify(request).getRequestDispatcher("/WEB-INF/results/admin.jsp");
+        verify(dispatcher).forward(request, response);
+        verify(service, never()).registraUtente(any());
+    }
+
+    /** Un cliente già autenticato torna al profilo e non viene registrato di nuovo. */
+    @Test
+    void clienteGiaAutenticato_vaAlProfiloSenzaRegistrare() throws Exception {
+        when(session.getAttribute("utente")).thenReturn(autenticato(false));
+
+        servlet.doGet(request, response);
+
+        verify(request).getRequestDispatcher("/WEB-INF/results/profile.jsp");
+        verify(dispatcher, times(1)).forward(request, response);
+        verify(service, never()).registraUtente(any());
+    }
 }
