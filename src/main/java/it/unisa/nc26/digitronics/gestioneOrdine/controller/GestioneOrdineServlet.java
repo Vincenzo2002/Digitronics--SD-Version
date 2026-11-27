@@ -138,62 +138,9 @@ public class GestioneOrdineServlet extends HttpServlet {
                     scadenzaCarta = scadenzaCarta.trim();
                     cvv = cvv.trim();
 
-                    // Controllo dei formati per i campi della spedizione
-                    if (!nome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
-                        throw new MyServletException("Nome non valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
-                    }
-
-                    if (!cognome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
-                        throw new MyServletException("Cognome non valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
-                    }
-
-                    if (!via.matches("^.{1,255}$")) {
-                        throw new MyServletException("La via deve contenere tra 1 e 255 caratteri.");
-                    }
-
-                    if (!cap.matches("^\\d{5}$")) {
-                        throw new MyServletException("CAP non valido. Deve contenere esattamente 5 caratteri numerici");
-                    }
-
-                    if (!città.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
-                        throw new MyServletException("Il nome della città non è valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
-                    }
-
-                    if (!numeroCivico.matches("^\\d{1,5}(\\s?(bis|tris|[a-zA-Z]))?$")) {
-                        throw new MyServletException("Numero civico non valido.");
-                    }
-
-                    if (!telefono.matches("^\\+?[1-9]\\d{1,14}$")) {
-                        throw new MyServletException("Numero di telefono non valido.");
-                    }
-
-                    // Controllo dei formati per i campi della carta di credito
-                    if (!nomeIntestatario.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
-                        throw new MyServletException("Nome dell'intestatario della carta non valido.Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
-                    }
-                    if (!cvv.matches("^[0-9]{3}$")) {
-                        throw new MyServletException("CVV non valido. Deve essere di 3 cifre numeriche.");
-                    }
-                    //Controlli necessari per il numero della carta
-                    if (!numeroCarta.replaceAll(" ", "").matches("^[0-9]{16}$")) {
-                        throw new MyServletException("Numero della carta di credito non valido. Deve essere di 16 cifre.");
-                    }
-                    // Controlli necessari per la data di scadenza
-                    if (!scadenzaCarta.matches("^(0[1-9]|1[0-2])/[0-9]{2}$")) {
-                        throw new MyServletException("Data di scadenza della carta non valida. Deve essere nel formato MM/YY.");
-                    }
-
-                    // Parsing della data di scadenza
-                    String[] scadenzaParts = scadenzaCarta.split("/");
-                    int meseScadenza = Integer.parseInt(scadenzaParts[0]);
-                    int annoScadenza = Integer.parseInt(scadenzaParts[1]) + 2000; // Aggiungo 2000 per ottenere l'anno completo
-
-                    LocalDate oggi = LocalDate.now();
-                    LocalDate dataScadenza = LocalDate.of(annoScadenza, meseScadenza, 1).plusMonths(1).minusDays(1);
-
-                    if (dataScadenza.isBefore(oggi)) {
-                        throw new MyServletException("La carta di credito è scaduta.");
-                    }
+                    // Controllo dei formati dei campi della spedizione e della carta di credito
+                    validaDatiCheckout(nome, cognome, via, numeroCivico, cap, città, telefono,
+                            nomeIntestatario, cvv, numeroCarta, scadenzaCarta);
 
                     //Si verifica a questo punto che l'indirizzo di spedizione esista per davvero
                     boolean indirizzoVerificato = gestioneOrdineService.verificaIndirizzo(via, cap, città);
@@ -313,5 +260,84 @@ public class GestioneOrdineServlet extends HttpServlet {
     protected void doPost (HttpServletRequest request, HttpServletResponse response) throws
             ServletException, IOException {
         doGet(request, response);
+    }
+
+    /**
+     * Controlla il formato dei campi del form di checkout e la scadenza della carta di credito.
+     *
+     * <p>I valori devono essere già privati degli spazi iniziali e finali.</p>
+     *
+     * @param nome             nome del destinatario
+     * @param cognome          cognome del destinatario
+     * @param via              via dell'indirizzo di spedizione
+     * @param numeroCivico     numero civico
+     * @param cap              codice di avviamento postale
+     * @param città            città
+     * @param telefono         numero di telefono
+     * @param nomeIntestatario nome dell'intestatario della carta
+     * @param cvv              codice di sicurezza della carta
+     * @param numeroCarta      numero della carta di credito
+     * @param scadenzaCarta    scadenza della carta nel formato MM/YY
+     * @throws MyServletException se un campo non è valido o la carta è scaduta
+     */
+    static void validaDatiCheckout(String nome, String cognome, String via, String numeroCivico, String cap,
+                                   String città, String telefono, String nomeIntestatario, String cvv,
+                                   String numeroCarta, String scadenzaCarta) throws MyServletException {
+        // Controllo dei formati per i campi della spedizione
+        if (!nome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
+            throw new MyServletException("Nome non valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
+        }
+
+        if (!cognome.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
+            throw new MyServletException("Cognome non valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
+        }
+
+        if (!via.matches("^.{1,255}$")) {
+            throw new MyServletException("La via deve contenere tra 1 e 255 caratteri.");
+        }
+
+        if (!cap.matches("^\\d{5}$")) {
+            throw new MyServletException("CAP non valido. Deve contenere esattamente 5 caratteri numerici");
+        }
+
+        if (!città.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
+            throw new MyServletException("Il nome della città non è valido. Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
+        }
+
+        if (!numeroCivico.matches("^\\d{1,5}(\\s?(bis|tris|[a-zA-Z]))?$")) {
+            throw new MyServletException("Numero civico non valido.");
+        }
+
+        if (!telefono.matches("^\\+?[1-9]\\d{1,14}$")) {
+            throw new MyServletException("Numero di telefono non valido.");
+        }
+
+        // Controllo dei formati per i campi della carta di credito
+        if (!nomeIntestatario.matches("^(?!\\s*$)[a-zA-Zà-ÿÀ-Ÿ\\s']{1,255}$")) {
+            throw new MyServletException("Nome dell'intestatario della carta non valido.Deve contenere solo lettere, spazi e apostrofi, con una lunghezza massima di 255 caratteri.");
+        }
+        if (!cvv.matches("^[0-9]{3}$")) {
+            throw new MyServletException("CVV non valido. Deve essere di 3 cifre numeriche.");
+        }
+        //Controlli necessari per il numero della carta
+        if (!numeroCarta.replaceAll(" ", "").matches("^[0-9]{16}$")) {
+            throw new MyServletException("Numero della carta di credito non valido. Deve essere di 16 cifre.");
+        }
+        // Controlli necessari per la data di scadenza
+        if (!scadenzaCarta.matches("^(0[1-9]|1[0-2])/[0-9]{2}$")) {
+            throw new MyServletException("Data di scadenza della carta non valida. Deve essere nel formato MM/YY.");
+        }
+
+        // Parsing della data di scadenza
+        String[] scadenzaParts = scadenzaCarta.split("/");
+        int meseScadenza = Integer.parseInt(scadenzaParts[0]);
+        int annoScadenza = Integer.parseInt(scadenzaParts[1]) + 2000; // Aggiungo 2000 per ottenere l'anno completo
+
+        LocalDate oggi = LocalDate.now();
+        LocalDate dataScadenza = LocalDate.of(annoScadenza, meseScadenza, 1).plusMonths(1).minusDays(1);
+
+        if (dataScadenza.isBefore(oggi)) {
+            throw new MyServletException("La carta di credito è scaduta.");
+        }
     }
 }

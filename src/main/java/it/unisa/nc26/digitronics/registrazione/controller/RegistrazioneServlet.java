@@ -83,11 +83,7 @@ public class RegistrazioneServlet extends HttpServlet {
         Boolean admin = false;
 
         // Validazione dei dati di input
-        if (nome == null || !nome.matches(FORMATO_NOME) ||
-                cognome == null || !cognome.matches(FORMATO_NOME) ||
-                // Il dominio di primo livello può avere più di 4 caratteri (es. .museum)
-                email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,}$") ||
-                password == null || password.length() < 8) {
+        if (!datiRegistrazioneValidi(nome, cognome, email, password)) {
             throw new MyServletException("Dati in input non validi");
         }
 
@@ -131,5 +127,21 @@ public class RegistrazioneServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         doGet(request, response);
     }
-}
 
+    /**
+     * Controlla il formato dei dati inseriti nel form di registrazione.
+     *
+     * @param nome     nome dell'utente
+     * @param cognome  cognome dell'utente
+     * @param email    email dell'utente
+     * @param password password in chiaro
+     * @return {@code true} se tutti i dati sono validi, {@code false} altrimenti
+     */
+    static boolean datiRegistrazioneValidi(String nome, String cognome, String email, String password) {
+        return nome != null && nome.matches(FORMATO_NOME) &&
+                cognome != null && cognome.matches(FORMATO_NOME) &&
+                // Il dominio di primo livello può avere più di 4 caratteri (es. .museum)
+                email != null && email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,}$") &&
+                password != null && password.length() >= 8;
+    }
+}

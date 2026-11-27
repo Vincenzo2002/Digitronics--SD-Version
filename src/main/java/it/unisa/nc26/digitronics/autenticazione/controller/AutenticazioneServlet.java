@@ -127,7 +127,7 @@ public class AutenticazioneServlet extends HttpServlet {
      * @param carrelloDB     il carrello recuperato dal database
      * @param carrelloSession il carrello della sessione
      */
-    private void mergeCarrello(List<ItemCarrello> carrelloDB, List<ItemCarrello> carrelloSession) {
+    static void mergeCarrello(List<ItemCarrello> carrelloDB, List<ItemCarrello> carrelloSession) {
         Map<Integer, ItemCarrello> map = new HashMap<>();
         //per evitare di avere errori se una delle due liste è null la inizializzo come lista vuota
         if (carrelloDB == null) {
